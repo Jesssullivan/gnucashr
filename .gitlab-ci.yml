@@ -1,0 +1,169 @@
+# GitLab CI/CD Pipeline for gnucashr R Package
+# Primary CI pipeline - GitLab CI
+# Secondary CI pipeline - GitHub Actions
+
+image: rocker/tidyverse:4.4.0
+
+variables:
+  R_LIBS_USER: "$CI_PROJECT_DIR/ci/lib"
+  _R_CHECK_CRAN_INCOMING_REMOTE_: "false"
+  _R_CHECK_FORCE_SUGGESTS_: "false"
+  R_CHECK_ARGS: "--no-manual --as-cran"
+  MAKEFLAGS: "-j2"
+
+cache:
+  key: "${CI_COMMIT_REF_SLUG}"
+  paths:
+    - $R_LIBS_USER
+    - src/*.o
+
+stages:
+  - check
+  - test
+  - coverage
+  - deploy
+
+# Install system dependencies and R packages
+.setup: &setup
+  before_script:
+    - mkdir -p $R_LIBS_USER
+    # System dependencies for Rcpp/RcppParallel/RcppArmadillo
+    - apt-get update -qq && apt-get install -y -qq libcurl4-openssl-dev libssl-dev libxml2-dev libgit2-dev libblas-dev liblapack-dev
+    # Install R dependencies
+    - |
+      Rscript -e '
+        options(repos = c(CRAN = "https://cloud.r-project.org"))
+        install.packages("remotes", lib = Sys.getenv("R_LIBS_USER"))
+        library(remotes)
+        remotes::install_deps(dependencies = TRUE, upgrade = "never")
+      '
+
+# R CMD check - the main package validation
+r-cmd-check:
+  stage: check
+  <<: *setup
+  script:
+    - |
+      Rscript -e '
+        options(repos = c(CRAN = "https://cloud.r-project.org"))
+        install.packages(c("rcmdcheck", "devtools"), lib = Sys.getenv("R_LIBS_USER"))
+        library(rcmdcheck)
+        rcmdcheck::rcmdcheck(
+          args = c("--no-manual", "--as-cran"),
+          build_args = c("--no-manual"),
+          error_on = "warning",
+          check_dir = "check"
+        )
+      '
+  artifacts:
+    paths:
+      - check/
+    expire_in: 1 week
+    when: always
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG
+
+# Run testthat tests
+test:
+  stage: test
+  <<: *setup
+  script:
+    - |
+      Rscript -e '
+        options(repos = c(CRAN = "https://cloud.r-project.org"))
+        library(testthat)
+        library(gnucashr)
+        test_results <- test_check("gnucashr", reporter = "junit", output_file = "test-results.xml")
+      '
+  artifacts:
+    reports:
+      junit: test-results.xml
+    expire_in: 1 week
+    when: always
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# Code coverage with covr
+coverage:
+  stage: coverage
+  <<: *setup
+  script:
+    - |
+      Rscript -e '
+        options(repos = c(CRAN = "https://cloud.r-project.org"))
+        install.packages("covr", lib = Sys.getenv("R_LIBS_USER"))
+        library(covr)
+
+        cov <- package_coverage(
+          type = "tests",
+          line_exclusions = list("src/RcppExports.cpp")
+        )
+
+        # Generate coverage report
+        report <- coverage_to_list(cov)
+        total_coverage <- attr(cov, "package")$filecoverage
+        message(sprintf("Total coverage: %.1f%%", mean(total_coverage) * 100))
+
+        # Save coverage report as cobertura XML for GitLab
+        to_cobertura(cov, filename = "coverage.xml")
+
+        # Upload to Codecov if token is available
+        if (Sys.getenv("CODECOV_TOKEN") != "") {
+          codecov(token = Sys.getenv("CODECOV_TOKEN"))
+        }
+      '
+  coverage: '/Total coverage: (\d+\.\d+)%/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+    expire_in: 1 week
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+# Build pkgdown documentation site
+pages:
+  stage: deploy
+  <<: *setup
+  script:
+    - |
+      Rscript -e '
+        options(repos = c(CRAN = "https://cloud.r-project.org"))
+        install.packages(c("pkgdown", "devtools"), lib = Sys.getenv("R_LIBS_USER"))
+        library(pkgdown)
+
+        # Build documentation site
+        pkgdown::build_site(override = list(destination = "public"))
+      '
+  artifacts:
+    paths:
+      - public
+    expire_in: 1 week
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  environment:
+    name: production
+    url: $CI_PAGES_URL
+
+# Build source package for release
+build-package:
+  stage: deploy
+  <<: *setup
+  script:
+    - |
+      Rscript -e '
+        options(repos = c(CRAN = "https://cloud.r-project.org"))
+        pkg <- devtools::build()
+        file.copy(pkg, "gnucashr.tar.gz")
+      '
+  artifacts:
+    paths:
+      - gnucashr.tar.gz
+    expire_in: 1 month
+  rules:
+    - if: $CI_COMMIT_TAG

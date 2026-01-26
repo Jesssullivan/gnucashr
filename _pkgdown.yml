@@ -1,0 +1,347 @@
+url: https://Jesssullivan.github.io/gnucashr/
+template:
+  bootstrap: 5
+  bootswatch: flatly
+  bslib:
+    primary: "#2C3E50"
+    navbar-bg: "#2C3E50"
+
+home:
+  title: gnucashr
+  description: Read, Analyze, and Model GnuCash Accounting Data in R
+
+navbar:
+  structure:
+    left:
+      - intro
+      - reference
+      - articles
+      - tutorials
+      - news
+    right:
+      - search
+      - github
+  components:
+    intro:
+      text: Get Started
+      href: articles/getting-started.html
+    articles:
+      text: Articles
+      menu:
+        - text: "User Guides"
+        - text: Getting Started
+          href: articles/getting-started.html
+        - text: Multi-Book Consolidation
+          href: articles/consolidation.html
+        - text: Financial Forecasting
+          href: articles/forecasting.html
+        - text: "---"
+        - text: "Technical Articles"
+        - text: Performance Benchmarks
+          href: articles/performance-benchmarks.html
+        - text: Rcpp Internals
+          href: articles/rcpp-internals.html
+    github:
+      icon: fab fa-github fa-lg
+      href: https://github.com/Jesssullivan/gnucashr
+      aria-label: GitHub
+
+reference:
+  - title: "Reading GnuCash Files"
+    desc: "Connect to GnuCash SQLite and XML files"
+    contents:
+      - read_gnucash
+      - GnuCashDB
+      - detect_gnucash_format
+      - parse_gnucash_xml
+
+  - title: "Account Operations"
+    desc: "Work with the chart of accounts"
+    contents:
+      - account_balance
+      - account_balances
+      - account_transactions
+      - account_tree
+      - aggregate_by_type
+      - create_account
+      - create_account_path
+      - delete_account
+      - update_account
+
+  - title: "Financial Reports"
+    desc: "Generate standard financial statements"
+    contents:
+      - trial_balance
+      - balance_sheet
+      - income_statement
+      - income_statement_activity
+      - monthly_activity
+      - dashboard_metrics
+
+  - title: "Report Formatting"
+    desc: "Format reports for display and export"
+    contents:
+      - gt_trial_balance
+      - gt_balance_sheet
+      - gt_income_statement
+      - format_balance_sheet
+      - format_income_statement
+      - print_balance_sheet
+      - print_income_statement
+      - format_currency
+      - format_percent
+
+  - title: "Report Comparison"
+    desc: "Compare financial data across periods and entities"
+    contents:
+      - compare_income_statements
+      - compare_to_template
+      - plot_balance_sheet
+      - plot_monthly_activity
+      - plot_entity_comparison
+
+  - title: "Multi-Book Consolidation"
+    desc: "Manage multiple GnuCash books for corporate structures"
+    contents:
+      - BookCollection
+      - book_collection
+      - consolidation_summary
+      - build_consolidated_trial_balance
+      - combine_trial_balances
+      - validate_consolidation
+      - calculate_consolidation_adjustments
+
+  - title: "Intercompany Elimination"
+    desc: "Eliminate intercompany transactions for consolidated reporting"
+    contents:
+      - apply_ic_eliminations
+      - calculate_ic_elimination_entry
+      - create_standard_ic_rules
+      - identify_uneliminated_ic
+
+  - title: "Lazy Forecasting"
+    desc: "Build computation pipelines for financial projections"
+    contents:
+      - LazyForecast
+      - lazy_forecast
+      - lazy_result
+      - forecast_expr
+      - from_book
+      - from_collection
+      - from_config
+      - from_data
+      - lf_collect
+      - lf_filter
+      - lf_grow
+      - lf_monte_carlo
+      - lf_scenario
+      - lf_sensitivity
+      - compare_forecasts
+
+  - title: "Quick Forecasting"
+    desc: "Simple interfaces for common forecasting tasks"
+    contents:
+      - quick_monte_carlo
+      - quick_sensitivity
+      - combine_forecast_results
+
+  - title: "Monte Carlo Simulation"
+    desc: "Rcpp-accelerated parallel Monte Carlo"
+    contents:
+      - monte_carlo_parallel
+      - monte_carlo_multi_entity
+      - extract_mc_summary
+      - extract_quantile
+      - plot_monte_carlo
+
+  - title: "Scenario & Sensitivity Analysis"
+    desc: "Parallel scenario projection and sensitivity grids"
+    contents:
+      - parallel_project_scenarios
+      - parallel_sensitivity_grid
+      - batch_project_growth
+      - sequential_projection
+      - plot_sensitivity
+
+  - title: "Audited Operations"
+    desc: "Forecast operations with audit trail logging"
+    contents:
+      - starts_with("audited_")
+      - print_forecast_audit
+      - write_forecast_audit
+      - write_audit_log
+
+  - title: "Forecast Result Operations"
+    desc: "Transform and combine forecast results"
+    contents:
+      - bind_forecast_result
+      - bind_logged_forecast
+      - map_forecast_result
+      - map_logged_forecast
+      - validate_forecast_params
+
+  - title: "Result Monad (Error Handling)"
+    desc: "Functional error handling with Result type"
+    contents:
+      - ok
+      - err
+      - is_ok
+      - is_err
+      - unwrap
+      - unwrap_err
+      - result_bind
+      - result_map
+      - result_map_err
+      - result_match
+      - try_result
+      - combine_results
+
+  - title: "Safe Operations"
+    desc: "Result-wrapped versions of common operations"
+    contents:
+      - starts_with("safe_")
+
+  - title: "Logger Monad"
+    desc: "Track computation steps with audit logging"
+    contents:
+      - logged
+      - logged_value
+      - logged_log
+      - log_append
+      - log_bind
+      - log_map
+
+  - title: "Rcpp Utilities - Fractions"
+    desc: "High-performance fraction arithmetic"
+    contents:
+      - fraction_to_double
+      - double_to_fraction
+      - add_fractions
+      - validate_splits_balance
+
+  - title: "Rcpp Utilities - GUIDs"
+    desc: "GnuCash-format GUID generation and validation"
+    contents:
+      - generate_guid
+      - generate_guids
+      - validate_guid
+      - validate_guids
+      - check_guid_uniqueness
+
+  - title: "Rcpp Utilities - Validation"
+    desc: "Transaction validation and balance calculation"
+    contents:
+      - validate_transaction_balance
+      - validate_split_values
+      - calculate_running_balance
+
+  - title: "Transaction Operations"
+    desc: "Create and modify transactions"
+    contents:
+      - post_transaction
+      - post_transfer
+      - batch_post_transactions
+      - delete_transaction
+      - void_transaction
+
+  - title: "Backup & Recovery"
+    desc: "Manage GnuCash file backups"
+    contents:
+      - create_backup
+      - restore_backup
+      - list_backups
+      - backup_summary
+      - clean_old_backups
+      - with_backup
+
+  - title: "Account Templates"
+    desc: "Standardized chart of accounts templates"
+    contents:
+      - load_template
+      - list_templates
+      - apply_template
+      - compare_to_template
+      - flatten_template
+      - template_diagram
+
+  - title: "Budgets"
+    desc: "Budget creation and comparison"
+    contents:
+      - Budget
+      - BudgetComparison
+      - budget_from_df
+      - annual_budget
+      - quarterly_budget
+      - monthly_budget
+
+  - title: "Scheduled Transactions"
+    desc: "Recurring transaction management"
+    contents:
+      - ScheduledTransaction
+      - ScheduledTransactionManager
+      - scheduled_from_df
+      - annual_scheduled
+      - monthly_scheduled
+      - weekly_scheduled
+
+  - title: "Commodities & Securities"
+    desc: "Currency and security management"
+    contents:
+      - Commodity
+      - currency
+      - security
+      - commodities_from_df
+
+  - title: "Prices & Price Database"
+    desc: "Historical price tracking"
+    contents:
+      - Price
+      - PriceDB
+      - new_price
+      - prices_from_df
+      - pricedb_from_df
+
+  - title: "Lots & Cost Basis"
+    desc: "Investment lot tracking for capital gains"
+    contents:
+      - Lot
+      - LotManager
+      - lots_from_df
+
+  - title: "Quarto/Shiny Reactive"
+    desc: "Reactive wrappers for interactive dashboards"
+    contents:
+      - starts_with("reactive_")
+
+  - title: "Data Import"
+    desc: "Import from external formats (OFX, CSV)"
+    contents:
+      - create_gnucash
+
+articles:
+  - title: User Guides
+    navbar: ~
+    contents:
+      - getting-started
+      - consolidation
+      - forecasting
+
+  - title: Technical Articles
+    navbar: ~
+    contents:
+      - articles/performance-benchmarks
+      - articles/rcpp-internals
+
+news:
+  releases:
+    - text: "Version 0.2.0"
+      href: news/index.html
+
+authors:
+  Jess Sullivan:
+    href: https://tinyland.dev
+
+footer:
+  structure:
+    left: developed_by
+    right: built_with

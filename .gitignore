@@ -1,0 +1,38 @@
+# Self
+.gitignore
+
+# Claude
+.claude/
+CLAUDE.md
+
+# R build artifacts
+*.o
+*.so
+*.dll
+src/symbols.rds
+
+# Package build
+*.tar.gz
+*.Rcheck/
+
+# IDE
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+# OS
+.DS_Store
+Thumbs.db
+
+# pkgdown generated docs
+docs/
+pkgdown/
+
+# CI artifacts
+public/
+check/
+coverage.xml
+test-results.xml
+ci/
+.env

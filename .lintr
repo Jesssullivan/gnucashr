@@ -1,0 +1,11 @@
+linters: linters_with_defaults(
+    line_length_linter(120),
+    object_name_linter(styles = c("snake_case", "CamelCase")),
+    indentation_linter(indent = 2L),
+    commented_code_linter = NULL,
+    cyclocomp_linter = NULL
+  )
+exclusions: list(
+    "R/RcppExports.R",
+    "tests/testthat.R"
+  )

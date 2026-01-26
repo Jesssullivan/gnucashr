@@ -1,0 +1,6 @@
+id,Created (UTC),Amount,Fee,Net,Currency,Description,Type,Status,Customer Email,Customer Name
+txn_3OaBC123def456,2024-01-15 18:30:00,15000,465,14535,usd,Payment for Invoice #2001,charge,available,customer1@example.com,Alice Johnson
+txn_3OaBC789ghi012,2024-01-18 22:15:30,7500,248,7252,usd,Monthly subscription,charge,available,customer2@example.com,Bob Williams
+txn_3OaBC345jkl678,2024-01-20 14:45:00,-5000,0,-5000,usd,Refund for order #3456,refund,available,customer1@example.com,Alice Johnson
+txn_3OaBC901mno234,2024-01-22 10:00:00,25000,755,24245,usd,Annual plan upgrade,charge,available,customer3@example.com,Carol Davis
+txn_3OaBC567pqr890,2024-01-25 08:30:00,-50000,0,-50000,usd,Payout to bank account,payout,paid,,

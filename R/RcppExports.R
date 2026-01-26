@@ -125,6 +125,40 @@ monte_carlo_multi_entity <- function(base_revenues, growth_means, growth_sds, ex
     .Call(`_gnucashr_monte_carlo_multi_entity`, base_revenues, growth_means, growth_sds, expense_rates, n_sims, n_periods, seed)
 }
 
+#' Detect OFX File Version
+#'
+#' Determine whether an OFX file is version 1.x (SGML) or 2.x (XML).
+#'
+#' @param content String content of the OFX file
+#' @return String: "1" for SGML, "2" for XML, "unknown" otherwise
+#' @export
+detect_ofx_version_cpp <- function(content) {
+    .Call(`_gnucashr_detect_ofx_version_cpp`, content)
+}
+
+#' Parse OFX Content
+#'
+#' Parse OFX/QFX file content and extract transaction data.
+#' Handles both OFX 1.x (SGML) and 2.x (XML) formats.
+#'
+#' @param content String content of the OFX file
+#' @return List with vectors: dates, amounts, names, fitids, memos, trntype, currency
+#' @export
+parse_ofx_cpp <- function(content) {
+    .Call(`_gnucashr_parse_ofx_cpp`, content)
+}
+
+#' Extract OFX Account Info
+#'
+#' Extract account information from OFX content (ACCTID, BANKID, etc.)
+#'
+#' @param content String content of the OFX file
+#' @return List with account_id, bank_id, account_type, org_name
+#' @export
+extract_ofx_account_info <- function(content) {
+    .Call(`_gnucashr_extract_ofx_account_info`, content)
+}
+
 #' Parallel Scenario Projection
 #'
 #' Project multiple growth scenarios in parallel for each entity.

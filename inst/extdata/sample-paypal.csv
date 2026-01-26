@@ -1,0 +1,6 @@
+Date,Time,TimeZone,Name,Type,Status,Currency,Gross,Fee,Net,Balance,Transaction ID,Item Title,Note
+01/15/2024,10:30:45,PST,Acme Corporation,Payment,Completed,USD,"1,250.00",-36.63,"1,213.37","5,213.37",TXN89ABC123DEF,Consulting Services January,Invoice #1001 payment
+01/18/2024,14:22:10,PST,Jane Smith,Payment,Completed,USD,75.00,-2.48,72.52,"5,285.89",TXN89ABC456GHI,Product Purchase,Order #4521
+01/20/2024,09:15:33,PST,Refund to John Doe,Refund,Completed,USD,-50.00,1.75,-48.25,"5,237.64",TXN89ABC789JKL,Product Return,Defective item return
+01/22/2024,16:45:00,PST,Global Widgets Ltd,Payment,Completed,EUR,500.00,-15.20,484.80,"5,722.44",TXN89ABCDEFMNO,International Order,Export sale - EU
+01/25/2024,11:30:22,PST,Transfer to Bank,Transfer,Completed,USD,"-2,000.00",0.00,"-2,000.00","3,722.44",TXN89ABCGHIPQR,Bank Withdrawal,Monthly transfer to checking

@@ -3,6 +3,7 @@
 ^README\.Rmd$
 ^LICENSE\.md$
 ^\.github$
+^\.gitlab-ci\.yml$
 ^codecov\.yml$
 ^_pkgdown\.yml$
 ^docs$
@@ -10,3 +11,8 @@
 ^\.lintr$
 ^gnucashr\.Rcheck$
 ^gnucashr_.*\.tar\.gz$
+^ci$
+^public$
+^check$
+^coverage\.xml$
+^test-results\.xml$

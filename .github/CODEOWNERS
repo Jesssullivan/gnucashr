@@ -1,0 +1,18 @@
+# CODEOWNERS for gnucashr
+# These owners will be requested for review on PRs
+
+# Default owner for everything
+* @Jesssullivan
+
+# Core R code
+/R/ @Jesssullivan
+
+# C++ code requires careful review
+/src/ @Jesssullivan
+
+# Documentation
+/vignettes/ @Jesssullivan
+/man/ @Jesssullivan
+
+# CI/CD configuration
+/.github/ @Jesssullivan

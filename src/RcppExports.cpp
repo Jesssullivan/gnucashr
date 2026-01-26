@@ -129,6 +129,39 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// detect_ofx_version_cpp
+std::string detect_ofx_version_cpp(std::string content);
+RcppExport SEXP _gnucashr_detect_ofx_version_cpp(SEXP contentSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type content(contentSEXP);
+    rcpp_result_gen = Rcpp::wrap(detect_ofx_version_cpp(content));
+    return rcpp_result_gen;
+END_RCPP
+}
+// parse_ofx_cpp
+List parse_ofx_cpp(std::string content);
+RcppExport SEXP _gnucashr_parse_ofx_cpp(SEXP contentSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type content(contentSEXP);
+    rcpp_result_gen = Rcpp::wrap(parse_ofx_cpp(content));
+    return rcpp_result_gen;
+END_RCPP
+}
+// extract_ofx_account_info
+List extract_ofx_account_info(std::string content);
+RcppExport SEXP _gnucashr_extract_ofx_account_info(SEXP contentSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type content(contentSEXP);
+    rcpp_result_gen = Rcpp::wrap(extract_ofx_account_info(content));
+    return rcpp_result_gen;
+END_RCPP
+}
 // parallel_project_scenarios
 List parallel_project_scenarios(NumericVector base_values, NumericMatrix growth_matrix, int n_periods);
 RcppExport SEXP _gnucashr_parallel_project_scenarios(SEXP base_valuesSEXP, SEXP growth_matrixSEXP, SEXP n_periodsSEXP) {
@@ -256,6 +289,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_gnucashr_generate_guids", (DL_FUNC) &_gnucashr_generate_guids, 1},
     {"_gnucashr_monte_carlo_parallel", (DL_FUNC) &_gnucashr_monte_carlo_parallel, 9},
     {"_gnucashr_monte_carlo_multi_entity", (DL_FUNC) &_gnucashr_monte_carlo_multi_entity, 7},
+    {"_gnucashr_detect_ofx_version_cpp", (DL_FUNC) &_gnucashr_detect_ofx_version_cpp, 1},
+    {"_gnucashr_parse_ofx_cpp", (DL_FUNC) &_gnucashr_parse_ofx_cpp, 1},
+    {"_gnucashr_extract_ofx_account_info", (DL_FUNC) &_gnucashr_extract_ofx_account_info, 1},
     {"_gnucashr_parallel_project_scenarios", (DL_FUNC) &_gnucashr_parallel_project_scenarios, 3},
     {"_gnucashr_parallel_sensitivity_grid", (DL_FUNC) &_gnucashr_parallel_sensitivity_grid, 5},
     {"_gnucashr_batch_project_growth", (DL_FUNC) &_gnucashr_batch_project_growth, 4},

@@ -1,0 +1,33 @@
+# Codecov configuration for gnucashr
+# https://docs.codecov.io/docs/codecov-yaml
+
+coverage:
+  status:
+    project:
+      default:
+        target: 80%
+        threshold: 1%
+        informational: false
+    patch:
+      default:
+        target: 80%
+        threshold: 1%
+        informational: false
+
+parsers:
+  gcov:
+    branch_detection:
+      conditional: yes
+      loop: yes
+      method: no
+      macro: no
+
+comment:
+  layout: "header, diff, flags, files, footer"
+  behavior: default
+  require_changes: false
+
+ignore:
+  - "src/RcppExports.cpp"
+  - "R/RcppExports.R"
+  - "tests/**/*"

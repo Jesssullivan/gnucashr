@@ -117,5 +117,13 @@ utils::globalVariables(c(
   "period",
   "growth",
   "expense",
-  "value"
+  "value",
+
+  # CSV import operations
+  "currency",
+  "external_id",
+  "memo",
+  "category",
+  "fee",
+  "status"
 ))
