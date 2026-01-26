@@ -47,24 +47,22 @@ jobs:
         run: |
           brew install harfbuzz fribidi freetype
 
-      # macOS: manual installation to avoid CRAN binary download failures
+      # macOS: use base R install.packages to avoid pak binary download failures
       - name: Install dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
-          # Install pak and use it with source platform
           Rscript -e '
             options(
               repos = c(CRAN = "https://cloud.r-project.org"),
-              pkgType = "source"
+              pkgType = "source",
+              Ncpus = 4
             )
-            install.packages("pak", repos = sprintf(
-              "https://r-lib.github.io/p/pak/stable/%s/%s/%s",
-              .Platform$pkgType, R.Version()$os, R.Version()$arch
-            ))
-            # Set pak to use source packages
-            Sys.setenv(PKG_PLATFORM = "source")
-            pak::local_install_deps(dependencies = TRUE, upgrade = FALSE)
-            pak::pkg_install("rcmdcheck")
+            # Install remotes for dependency resolution
+            install.packages("remotes", type = "source")
+            # Install package dependencies from source
+            remotes::install_deps(dependencies = TRUE, type = "source", upgrade = "never")
+            # Install rcmdcheck
+            install.packages("rcmdcheck", type = "source")
           '
         shell: bash
 
