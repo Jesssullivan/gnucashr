@@ -33,9 +33,9 @@ stages:
     - |
       Rscript -e '
         options(repos = c(CRAN = "https://cloud.r-project.org"))
-        install.packages("remotes", lib = Sys.getenv("R_LIBS_USER"))
+        install.packages(c("remotes", "knitr", "rmarkdown"), lib = Sys.getenv("R_LIBS_USER"))
         library(remotes)
-        remotes::install_deps(dependencies = TRUE, upgrade = "never")
+        remotes::install_deps(dependencies = TRUE, upgrade = "always")
       '
 
 # R CMD check - the main package validation
@@ -46,11 +46,11 @@ r-cmd-check:
     - |
       Rscript -e '
         options(repos = c(CRAN = "https://cloud.r-project.org"))
-        install.packages(c("rcmdcheck", "devtools"), lib = Sys.getenv("R_LIBS_USER"))
+        install.packages(c("rcmdcheck", "devtools", "knitr", "rmarkdown"), lib = Sys.getenv("R_LIBS_USER"))
         library(rcmdcheck)
         rcmdcheck::rcmdcheck(
           args = c("--no-manual", "--as-cran"),
-          build_args = c("--no-manual"),
+          build_args = c("--no-manual", "--no-build-vignettes"),
           error_on = "warning",
           check_dir = "check"
         )
