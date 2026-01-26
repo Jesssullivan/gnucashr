@@ -353,6 +353,34 @@ reference:
     contents:
       - create_gnucash
 
+  - title: "Print Methods"
+    desc: "S3 print methods for package objects"
+    contents:
+      - starts_with("print.")
+
+  - title: "Internal Documentation"
+    desc: "Grouped documentation and internal helpers"
+    contents:
+      - account-templates
+      - balance-sheet
+      - consolidation
+      - detect_ofx_version_cpp
+      - extract_ofx_account_info
+      - forecast-expr
+      - forecast-logged
+      - forecast-result
+      - get_ofx_account_info
+      - gnucash-xml
+      - import-ofx
+      - income-statement
+      - intercompany
+      - monad-logger
+      - monad-result
+      - validate_csv_import
+      - print_ofx_summary
+      - write-backup
+      - write-transaction
+
 articles:
   - title: User Guides
     navbar: ~
