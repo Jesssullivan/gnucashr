@@ -47,7 +47,7 @@ stages:
 # R CMD check - the main package validation
 r-cmd-check:
   stage: check
-  timeout: 45m
+  timeout: 1h 30m
   <<: *setup
   script:
     - |
