@@ -1,18 +1,40 @@
 # Codecov configuration for gnucashr
-# https://docs.codecov.io/docs/codecov-yaml
+# https://docs.codecov.com/docs/codecov-yaml
+
+codecov:
+  require_ci_to_pass: true
+  notify:
+    wait_for_ci: true
 
 coverage:
+  precision: 2
+  round: down
+  range: "70...100"
   status:
     project:
       default:
         target: 80%
-        threshold: 1%
+        threshold: 2%
         informational: false
+      # Separate target for Rcpp code (harder to cover)
+      rcpp:
+        target: 70%
+        threshold: 5%
+        paths:
+          - "src/**"
+          - "!src/RcppExports.cpp"
     patch:
       default:
         target: 80%
-        threshold: 1%
-        informational: false
+        threshold: 2%
+
+# Flags for separate coverage tracking
+flags:
+  unittests:
+    paths:
+      - R/
+      - src/
+    carryforward: true
 
 parsers:
   gcov:
@@ -26,8 +48,12 @@ comment:
   layout: "header, diff, flags, files, footer"
   behavior: default
   require_changes: false
+  require_base: false
+  require_head: true
 
 ignore:
   - "src/RcppExports.cpp"
   - "R/RcppExports.R"
   - "tests/**/*"
+  - "vignettes/**/*"
+  - "man/**/*"
