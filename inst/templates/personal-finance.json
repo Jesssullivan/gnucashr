@@ -1,0 +1,250 @@
+{
+  "name": "Personal Finance",
+  "description": "Chart of accounts for personal/household finances",
+  "currency": "USD",
+  "accounts": [
+    {
+      "name": "Assets",
+      "type": "ASSET",
+      "placeholder": true,
+      "children": [
+        {
+          "name": "Current Assets",
+          "type": "ASSET",
+          "placeholder": true,
+          "children": [
+            {"name": "Checking Account", "type": "BANK"},
+            {"name": "Savings Account", "type": "BANK"},
+            {"name": "Cash", "type": "CASH"},
+            {"name": "Emergency Fund", "type": "BANK"}
+          ]
+        },
+        {
+          "name": "Investments",
+          "type": "ASSET",
+          "placeholder": true,
+          "children": [
+            {"name": "Brokerage Account", "type": "STOCK"},
+            {"name": "401(k)", "type": "STOCK"},
+            {"name": "IRA", "type": "STOCK"},
+            {"name": "Roth IRA", "type": "STOCK"},
+            {"name": "HSA", "type": "BANK"},
+            {"name": "529 Plan", "type": "STOCK"}
+          ]
+        },
+        {
+          "name": "Fixed Assets",
+          "type": "ASSET",
+          "placeholder": true,
+          "children": [
+            {"name": "Home", "type": "ASSET"},
+            {"name": "Vehicle", "type": "ASSET"},
+            {"name": "Personal Property", "type": "ASSET"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Liabilities",
+      "type": "LIABILITY",
+      "placeholder": true,
+      "children": [
+        {
+          "name": "Current Liabilities",
+          "type": "LIABILITY",
+          "placeholder": true,
+          "children": [
+            {"name": "Credit Card", "type": "CREDIT"},
+            {"name": "Line of Credit", "type": "LIABILITY"}
+          ]
+        },
+        {
+          "name": "Long-Term Liabilities",
+          "type": "LIABILITY",
+          "placeholder": true,
+          "children": [
+            {"name": "Mortgage", "type": "LIABILITY"},
+            {"name": "Auto Loan", "type": "LIABILITY"},
+            {"name": "Student Loans", "type": "LIABILITY"},
+            {"name": "Personal Loan", "type": "LIABILITY"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Equity",
+      "type": "EQUITY",
+      "placeholder": true,
+      "children": [
+        {"name": "Opening Balances", "type": "EQUITY"}
+      ]
+    },
+    {
+      "name": "Income",
+      "type": "INCOME",
+      "placeholder": true,
+      "children": [
+        {
+          "name": "Employment Income",
+          "type": "INCOME",
+          "placeholder": true,
+          "children": [
+            {"name": "Salary", "type": "INCOME"},
+            {"name": "Bonus", "type": "INCOME"},
+            {"name": "Employer Match", "type": "INCOME"}
+          ]
+        },
+        {
+          "name": "Investment Income",
+          "type": "INCOME",
+          "placeholder": true,
+          "children": [
+            {"name": "Dividends", "type": "INCOME"},
+            {"name": "Interest", "type": "INCOME"},
+            {"name": "Capital Gains", "type": "INCOME"}
+          ]
+        },
+        {
+          "name": "Other Income",
+          "type": "INCOME",
+          "placeholder": true,
+          "children": [
+            {"name": "Side Income", "type": "INCOME"},
+            {"name": "Gifts Received", "type": "INCOME"},
+            {"name": "Tax Refunds", "type": "INCOME"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Expenses",
+      "type": "EXPENSE",
+      "placeholder": true,
+      "children": [
+        {
+          "name": "Housing",
+          "type": "EXPENSE",
+          "placeholder": true,
+          "children": [
+            {"name": "Rent/Mortgage", "type": "EXPENSE"},
+            {"name": "Property Tax", "type": "EXPENSE"},
+            {"name": "Home Insurance", "type": "EXPENSE"},
+            {"name": "HOA Fees", "type": "EXPENSE"},
+            {"name": "Repairs & Maintenance", "type": "EXPENSE"}
+          ]
+        },
+        {
+          "name": "Utilities",
+          "type": "EXPENSE",
+          "placeholder": true,
+          "children": [
+            {"name": "Electric", "type": "EXPENSE"},
+            {"name": "Gas", "type": "EXPENSE"},
+            {"name": "Water & Sewer", "type": "EXPENSE"},
+            {"name": "Internet", "type": "EXPENSE"},
+            {"name": "Phone", "type": "EXPENSE"},
+            {"name": "Streaming Services", "type": "EXPENSE"}
+          ]
+        },
+        {
+          "name": "Transportation",
+          "type": "EXPENSE",
+          "placeholder": true,
+          "children": [
+            {"name": "Auto Payment", "type": "EXPENSE"},
+            {"name": "Auto Insurance", "type": "EXPENSE"},
+            {"name": "Fuel", "type": "EXPENSE"},
+            {"name": "Auto Maintenance", "type": "EXPENSE"},
+            {"name": "Parking & Tolls", "type": "EXPENSE"},
+            {"name": "Public Transit", "type": "EXPENSE"}
+          ]
+        },
+        {
+          "name": "Food",
+          "type": "EXPENSE",
+          "placeholder": true,
+          "children": [
+            {"name": "Groceries", "type": "EXPENSE"},
+            {"name": "Dining Out", "type": "EXPENSE"},
+            {"name": "Coffee & Snacks", "type": "EXPENSE"}
+          ]
+        },
+        {
+          "name": "Healthcare",
+          "type": "EXPENSE",
+          "placeholder": true,
+          "children": [
+            {"name": "Health Insurance", "type": "EXPENSE"},
+            {"name": "Medical", "type": "EXPENSE"},
+            {"name": "Dental", "type": "EXPENSE"},
+            {"name": "Vision", "type": "EXPENSE"},
+            {"name": "Prescriptions", "type": "EXPENSE"}
+          ]
+        },
+        {
+          "name": "Insurance",
+          "type": "EXPENSE",
+          "placeholder": true,
+          "children": [
+            {"name": "Life Insurance", "type": "EXPENSE"},
+            {"name": "Disability Insurance", "type": "EXPENSE"},
+            {"name": "Umbrella Policy", "type": "EXPENSE"}
+          ]
+        },
+        {
+          "name": "Personal",
+          "type": "EXPENSE",
+          "placeholder": true,
+          "children": [
+            {"name": "Clothing", "type": "EXPENSE"},
+            {"name": "Personal Care", "type": "EXPENSE"},
+            {"name": "Entertainment", "type": "EXPENSE"},
+            {"name": "Hobbies", "type": "EXPENSE"},
+            {"name": "Subscriptions", "type": "EXPENSE"},
+            {"name": "Gifts Given", "type": "EXPENSE"}
+          ]
+        },
+        {
+          "name": "Debt Payments",
+          "type": "EXPENSE",
+          "placeholder": true,
+          "children": [
+            {"name": "Student Loan Payment", "type": "EXPENSE"},
+            {"name": "Credit Card Interest", "type": "EXPENSE"},
+            {"name": "Loan Interest", "type": "EXPENSE"}
+          ]
+        },
+        {
+          "name": "Taxes",
+          "type": "EXPENSE",
+          "placeholder": true,
+          "children": [
+            {"name": "Federal Tax", "type": "EXPENSE"},
+            {"name": "State Tax", "type": "EXPENSE"},
+            {"name": "FICA", "type": "EXPENSE"}
+          ]
+        },
+        {
+          "name": "Education",
+          "type": "EXPENSE",
+          "placeholder": true,
+          "children": [
+            {"name": "Tuition", "type": "EXPENSE"},
+            {"name": "Books & Supplies", "type": "EXPENSE"},
+            {"name": "Training & Courses", "type": "EXPENSE"}
+          ]
+        },
+        {
+          "name": "Miscellaneous",
+          "type": "EXPENSE",
+          "placeholder": true,
+          "children": [
+            {"name": "Bank Fees", "type": "EXPENSE"},
+            {"name": "Charity", "type": "EXPENSE"},
+            {"name": "Other", "type": "EXPENSE"}
+          ]
+        }
+      ]
+    }
+  ]
+}

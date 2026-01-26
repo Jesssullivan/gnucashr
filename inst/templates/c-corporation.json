@@ -1,0 +1,244 @@
+{
+  "name": "C Corporation",
+  "description": "Chart of accounts for a C Corporation with equity structure",
+  "currency": "USD",
+  "accounts": [
+    {
+      "name": "Assets",
+      "type": "ASSET",
+      "placeholder": true,
+      "children": [
+        {
+          "name": "Current Assets",
+          "type": "ASSET",
+          "placeholder": true,
+          "children": [
+            {"name": "Checking Account", "type": "BANK"},
+            {"name": "Savings Account", "type": "BANK"},
+            {"name": "Money Market", "type": "BANK"},
+            {"name": "Accounts Receivable", "type": "RECEIVABLE"},
+            {"name": "Allowance for Doubtful Accounts", "type": "ASSET", "description": "Contra-asset"},
+            {"name": "Inventory", "type": "ASSET"},
+            {"name": "Prepaid Insurance", "type": "ASSET"},
+            {"name": "Prepaid Expenses", "type": "ASSET"},
+            {"name": "Due from Subsidiaries", "type": "ASSET", "description": "Intercompany receivables"}
+          ]
+        },
+        {
+          "name": "Investments",
+          "type": "ASSET",
+          "placeholder": true,
+          "children": [
+            {"name": "Investment in Subsidiaries", "type": "ASSET"},
+            {"name": "Marketable Securities", "type": "STOCK"}
+          ]
+        },
+        {
+          "name": "Fixed Assets",
+          "type": "ASSET",
+          "placeholder": true,
+          "children": [
+            {"name": "Land", "type": "ASSET"},
+            {"name": "Buildings", "type": "ASSET"},
+            {"name": "Accumulated Depreciation - Buildings", "type": "ASSET"},
+            {"name": "Equipment", "type": "ASSET"},
+            {"name": "Accumulated Depreciation - Equipment", "type": "ASSET"},
+            {"name": "Vehicles", "type": "ASSET"},
+            {"name": "Accumulated Depreciation - Vehicles", "type": "ASSET"},
+            {"name": "Furniture & Fixtures", "type": "ASSET"},
+            {"name": "Accumulated Depreciation - F&F", "type": "ASSET"},
+            {"name": "Leasehold Improvements", "type": "ASSET"},
+            {"name": "Accumulated Amortization - LHI", "type": "ASSET"}
+          ]
+        },
+        {
+          "name": "Intangible Assets",
+          "type": "ASSET",
+          "placeholder": true,
+          "children": [
+            {"name": "Goodwill", "type": "ASSET"},
+            {"name": "Patents", "type": "ASSET"},
+            {"name": "Trademarks", "type": "ASSET"},
+            {"name": "Organization Costs", "type": "ASSET"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Liabilities",
+      "type": "LIABILITY",
+      "placeholder": true,
+      "children": [
+        {
+          "name": "Current Liabilities",
+          "type": "LIABILITY",
+          "placeholder": true,
+          "children": [
+            {"name": "Accounts Payable", "type": "PAYABLE"},
+            {"name": "Credit Cards", "type": "CREDIT"},
+            {"name": "Accrued Expenses", "type": "LIABILITY"},
+            {"name": "Accrued Payroll", "type": "LIABILITY"},
+            {"name": "Payroll Taxes Payable", "type": "LIABILITY"},
+            {"name": "Sales Tax Payable", "type": "LIABILITY"},
+            {"name": "Income Tax Payable", "type": "LIABILITY"},
+            {"name": "Dividends Payable", "type": "LIABILITY"},
+            {"name": "Current Portion of Long-Term Debt", "type": "LIABILITY"},
+            {"name": "Due to Subsidiaries", "type": "LIABILITY", "description": "Intercompany payables"},
+            {"name": "Deferred Revenue", "type": "LIABILITY"}
+          ]
+        },
+        {
+          "name": "Long-Term Liabilities",
+          "type": "LIABILITY",
+          "placeholder": true,
+          "children": [
+            {"name": "Notes Payable", "type": "LIABILITY"},
+            {"name": "Bonds Payable", "type": "LIABILITY"},
+            {"name": "Deferred Tax Liability", "type": "LIABILITY"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Equity",
+      "type": "EQUITY",
+      "placeholder": true,
+      "children": [
+        {
+          "name": "Capital Stock",
+          "type": "EQUITY",
+          "placeholder": true,
+          "children": [
+            {"name": "Common Stock", "type": "EQUITY", "description": "Par value"},
+            {"name": "Preferred Stock", "type": "EQUITY"},
+            {"name": "Additional Paid-In Capital", "type": "EQUITY", "description": "APIC"}
+          ]
+        },
+        {"name": "Retained Earnings", "type": "EQUITY"},
+        {"name": "Treasury Stock", "type": "EQUITY", "description": "Contra-equity"},
+        {"name": "Accumulated Other Comprehensive Income", "type": "EQUITY"}
+      ]
+    },
+    {
+      "name": "Income",
+      "type": "INCOME",
+      "placeholder": true,
+      "children": [
+        {
+          "name": "Operating Revenue",
+          "type": "INCOME",
+          "placeholder": true,
+          "children": [
+            {"name": "Product Sales", "type": "INCOME"},
+            {"name": "Service Revenue", "type": "INCOME"},
+            {"name": "Licensing Revenue", "type": "INCOME"},
+            {"name": "Sales Returns & Allowances", "type": "INCOME", "description": "Contra-revenue"},
+            {"name": "Sales Discounts", "type": "INCOME", "description": "Contra-revenue"}
+          ]
+        },
+        {
+          "name": "Other Income",
+          "type": "INCOME",
+          "placeholder": true,
+          "children": [
+            {"name": "Interest Income", "type": "INCOME"},
+            {"name": "Dividend Income", "type": "INCOME"},
+            {"name": "Gain on Sale of Assets", "type": "INCOME"},
+            {"name": "Unrealized Gains", "type": "INCOME"},
+            {"name": "Management Fee Income", "type": "INCOME", "description": "From subsidiaries"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Expenses",
+      "type": "EXPENSE",
+      "placeholder": true,
+      "children": [
+        {
+          "name": "Cost of Revenue",
+          "type": "EXPENSE",
+          "placeholder": true,
+          "children": [
+            {"name": "Cost of Goods Sold", "type": "EXPENSE"},
+            {"name": "Cost of Services", "type": "EXPENSE"},
+            {"name": "Direct Labor", "type": "EXPENSE"},
+            {"name": "Subcontractor Costs", "type": "EXPENSE"}
+          ]
+        },
+        {
+          "name": "Operating Expenses",
+          "type": "EXPENSE",
+          "placeholder": true,
+          "children": [
+            {
+              "name": "Selling Expenses",
+              "type": "EXPENSE",
+              "placeholder": true,
+              "children": [
+                {"name": "Advertising", "type": "EXPENSE"},
+                {"name": "Commissions", "type": "EXPENSE"},
+                {"name": "Marketing", "type": "EXPENSE"},
+                {"name": "Trade Shows", "type": "EXPENSE"}
+              ]
+            },
+            {
+              "name": "General & Administrative",
+              "type": "EXPENSE",
+              "placeholder": true,
+              "children": [
+                {"name": "Salaries & Wages", "type": "EXPENSE"},
+                {"name": "Employee Benefits", "type": "EXPENSE"},
+                {"name": "Payroll Taxes", "type": "EXPENSE"},
+                {"name": "Rent Expense", "type": "EXPENSE"},
+                {"name": "Utilities", "type": "EXPENSE"},
+                {"name": "Office Supplies", "type": "EXPENSE"},
+                {"name": "Insurance", "type": "EXPENSE"},
+                {"name": "Depreciation Expense", "type": "EXPENSE"},
+                {"name": "Amortization Expense", "type": "EXPENSE"},
+                {"name": "Professional Fees", "type": "EXPENSE"},
+                {"name": "Bank Charges", "type": "EXPENSE"},
+                {"name": "Bad Debt Expense", "type": "EXPENSE"},
+                {"name": "Repairs & Maintenance", "type": "EXPENSE"},
+                {"name": "Travel & Entertainment", "type": "EXPENSE"},
+                {"name": "Telephone & Internet", "type": "EXPENSE"},
+                {"name": "Software & Subscriptions", "type": "EXPENSE"},
+                {"name": "Management Fees", "type": "EXPENSE", "description": "To parent company"}
+              ]
+            },
+            {
+              "name": "Research & Development",
+              "type": "EXPENSE",
+              "placeholder": true,
+              "children": [
+                {"name": "R&D Salaries", "type": "EXPENSE"},
+                {"name": "R&D Materials", "type": "EXPENSE"},
+                {"name": "R&D Contracted Services", "type": "EXPENSE"}
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Other Expenses",
+          "type": "EXPENSE",
+          "placeholder": true,
+          "children": [
+            {"name": "Interest Expense", "type": "EXPENSE"},
+            {"name": "Loss on Sale of Assets", "type": "EXPENSE"},
+            {"name": "Unrealized Losses", "type": "EXPENSE"}
+          ]
+        },
+        {
+          "name": "Income Tax Expense",
+          "type": "EXPENSE",
+          "placeholder": true,
+          "children": [
+            {"name": "Federal Income Tax", "type": "EXPENSE"},
+            {"name": "State Income Tax", "type": "EXPENSE"},
+            {"name": "Deferred Tax Expense", "type": "EXPENSE"}
+          ]
+        }
+      ]
+    }
+  ]
+}

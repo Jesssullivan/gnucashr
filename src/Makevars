@@ -1,0 +1,13 @@
+# Makevars for gnucashr package
+# Requires: RcppParallel (TBB), RcppArmadillo (OpenMP)
+
+CXX_STD = CXX17
+
+# RcppParallel flags (Intel TBB)
+PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS) -DRCPP_PARALLEL_USE_TBB=1
+
+# Add rpath for TBB library location on macOS
+RCPP_PARALLEL_LIBS = $(shell "${R_HOME}/bin/Rscript" -e "RcppParallel::RcppParallelLibs()")
+TBB_LIB_PATH = $(shell "${R_HOME}/bin/Rscript" -e "cat(RcppParallel:::tbbLibraryPath())")
+
+PKG_LIBS = $(SHLIB_OPENMP_CXXFLAGS) $(RCPP_PARALLEL_LIBS) -Wl,-rpath,$(TBB_LIB_PATH)

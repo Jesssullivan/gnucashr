@@ -1,0 +1,139 @@
+{
+  "name": "Small Business",
+  "description": "Standard chart of accounts for a small business",
+  "currency": "USD",
+  "accounts": [
+    {
+      "name": "Assets",
+      "type": "ASSET",
+      "placeholder": true,
+      "children": [
+        {
+          "name": "Current Assets",
+          "type": "ASSET",
+          "placeholder": true,
+          "children": [
+            {"name": "Checking Account", "type": "BANK", "description": "Primary business checking"},
+            {"name": "Savings Account", "type": "BANK", "description": "Business savings"},
+            {"name": "Petty Cash", "type": "CASH"},
+            {"name": "Accounts Receivable", "type": "RECEIVABLE", "description": "Money owed by customers"},
+            {"name": "Inventory", "type": "ASSET", "description": "Goods for sale"},
+            {"name": "Prepaid Expenses", "type": "ASSET"}
+          ]
+        },
+        {
+          "name": "Fixed Assets",
+          "type": "ASSET",
+          "placeholder": true,
+          "children": [
+            {"name": "Equipment", "type": "ASSET"},
+            {"name": "Accumulated Depreciation", "type": "ASSET"},
+            {"name": "Vehicles", "type": "ASSET"},
+            {"name": "Furniture & Fixtures", "type": "ASSET"},
+            {"name": "Leasehold Improvements", "type": "ASSET"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Liabilities",
+      "type": "LIABILITY",
+      "placeholder": true,
+      "children": [
+        {
+          "name": "Current Liabilities",
+          "type": "LIABILITY",
+          "placeholder": true,
+          "children": [
+            {"name": "Accounts Payable", "type": "PAYABLE", "description": "Money owed to vendors"},
+            {"name": "Credit Card", "type": "CREDIT"},
+            {"name": "Payroll Liabilities", "type": "LIABILITY"},
+            {"name": "Sales Tax Payable", "type": "LIABILITY"},
+            {"name": "Short-Term Notes Payable", "type": "LIABILITY"}
+          ]
+        },
+        {
+          "name": "Long-Term Liabilities",
+          "type": "LIABILITY",
+          "placeholder": true,
+          "children": [
+            {"name": "Bank Loan", "type": "LIABILITY"},
+            {"name": "SBA Loan", "type": "LIABILITY"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Equity",
+      "type": "EQUITY",
+      "placeholder": true,
+      "children": [
+        {"name": "Owner's Capital", "type": "EQUITY"},
+        {"name": "Owner's Draw", "type": "EQUITY"},
+        {"name": "Retained Earnings", "type": "EQUITY"}
+      ]
+    },
+    {
+      "name": "Income",
+      "type": "INCOME",
+      "placeholder": true,
+      "children": [
+        {"name": "Sales Revenue", "type": "INCOME", "description": "Product and service sales"},
+        {"name": "Service Revenue", "type": "INCOME"},
+        {"name": "Interest Income", "type": "INCOME"},
+        {"name": "Other Income", "type": "INCOME"},
+        {"name": "Discounts Given", "type": "INCOME", "description": "Contra-revenue"}
+      ]
+    },
+    {
+      "name": "Expenses",
+      "type": "EXPENSE",
+      "placeholder": true,
+      "children": [
+        {
+          "name": "Cost of Goods Sold",
+          "type": "EXPENSE",
+          "placeholder": true,
+          "children": [
+            {"name": "Inventory Purchases", "type": "EXPENSE"},
+            {"name": "Shipping & Freight", "type": "EXPENSE"},
+            {"name": "Direct Labor", "type": "EXPENSE"}
+          ]
+        },
+        {
+          "name": "Operating Expenses",
+          "type": "EXPENSE",
+          "placeholder": true,
+          "children": [
+            {"name": "Advertising & Marketing", "type": "EXPENSE"},
+            {"name": "Bank Charges", "type": "EXPENSE"},
+            {"name": "Depreciation", "type": "EXPENSE"},
+            {"name": "Insurance", "type": "EXPENSE"},
+            {"name": "Interest Expense", "type": "EXPENSE"},
+            {"name": "Legal & Professional", "type": "EXPENSE"},
+            {"name": "Office Supplies", "type": "EXPENSE"},
+            {"name": "Payroll Expense", "type": "EXPENSE"},
+            {"name": "Rent", "type": "EXPENSE"},
+            {"name": "Repairs & Maintenance", "type": "EXPENSE"},
+            {"name": "Software & Subscriptions", "type": "EXPENSE"},
+            {"name": "Telephone & Internet", "type": "EXPENSE"},
+            {"name": "Travel & Entertainment", "type": "EXPENSE"},
+            {"name": "Utilities", "type": "EXPENSE"},
+            {"name": "Miscellaneous", "type": "EXPENSE"}
+          ]
+        },
+        {
+          "name": "Taxes",
+          "type": "EXPENSE",
+          "placeholder": true,
+          "children": [
+            {"name": "Federal Income Tax", "type": "EXPENSE"},
+            {"name": "State Income Tax", "type": "EXPENSE"},
+            {"name": "Payroll Taxes", "type": "EXPENSE"},
+            {"name": "Property Tax", "type": "EXPENSE"}
+          ]
+        }
+      ]
+    }
+  ]
+}

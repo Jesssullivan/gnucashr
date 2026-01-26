@@ -1,0 +1,274 @@
+---
+title: "Multi-Book Consolidation"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Multi-Book Consolidation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+## Introduction
+
+gnucashr supports managing multiple GnuCash books for corporate structures with
+multiple entities. The `BookCollection` class provides consolidated reporting
+with automatic intercompany elimination.
+
+## Creating a Book Collection
+
+```{r collection}
+library(gnucashr)
+
+# Create a collection with entity configuration
+config <- list(
+  parent = "Parent Corp",
+  subsidiaries = c("Sub A", "Sub B", "Sub C"),
+  fiscal_year_end = "12-31"
+)
+
+collection <- book_collection(config)
+
+# Add books
+collection$add_book("parent", "entities/parent/books.gnucash")
+collection$add_book("sub_a", "entities/sub-a/books.gnucash")
+collection$add_book("sub_b", "entities/sub-b/books.gnucash")
+collection$add_book("sub_c", "entities/sub-c/books.gnucash")
+
+# Check loaded books
+collection$list_books()
+```
+
+## Accessing Individual Books
+
+```{r individual}
+# Get a specific book
+parent_gc <- collection$get_book("parent")
+
+# Run operations on individual books
+parent_tb <- trial_balance(parent_gc)
+
+# Apply a function to all books
+all_tb <- collection$each(function(gc) {
+  trial_balance(gc, as_of = Sys.Date())
+})
+```
+
+## Consolidated Trial Balance
+
+```{r consolidated-tb}
+# Generate consolidated trial balance
+# Automatically sums balances across all entities
+consolidated <- collection$consolidated_trial_balance(as_of = Sys.Date())
+
+# With intercompany elimination disabled
+consolidated_raw <- collection$consolidated_trial_balance(
+  as_of = Sys.Date(),
+  eliminate_ic = FALSE
+)
+```
+
+## Intercompany Elimination
+
+gnucashr automatically identifies and eliminates intercompany transactions:
+
+```{r ic-elimination}
+# Define intercompany elimination rules
+ic_rules <- create_standard_ic_rules(
+  # Parent's receivable from Sub A
+  list(
+    parent_account = "Assets:Due from Sub A",
+    sub_account = "Liabilities:Due to Parent",
+    entity_pair = c("parent", "sub_a")
+  ),
+  # Management fees
+  list(
+    parent_account = "Income:Management Fees",
+    sub_account = "Expenses:Management Fees",
+    entity_pair = c("parent", "sub_a")
+  )
+)
+
+# Apply custom rules
+collection$set_ic_rules(ic_rules)
+
+# Generate consolidated with eliminations
+consolidated <- collection$consolidated_trial_balance(
+  as_of = Sys.Date(),
+  eliminate_ic = TRUE
+)
+
+# View elimination entries
+eliminations <- collection$ic_elimination_journal()
+```
+
+## Identifying Uneliminated Intercompany
+
+```{r uneliminated}
+# Find potential intercompany transactions not being eliminated
+uneliminated <- identify_uneliminated_ic(collection)
+
+# Review and add rules as needed
+if (nrow(uneliminated) > 0) {
+  print(uneliminated)
+  # Suggests counterparty accounts that may need elimination rules
+}
+```
+
+## Consolidated Financial Statements
+
+```{r consolidated-statements}
+# Consolidated balance sheet
+bs <- collection$consolidated_balance_sheet(as_of = Sys.Date())
+
+# Shows combined assets, liabilities, equity
+# Intercompany balances automatically eliminated
+
+# Consolidated income statement
+is <- collection$consolidated_income_statement(
+  start_date = as.Date("2024-01-01"),
+  end_date = as.Date("2024-12-31")
+)
+
+# Intercompany revenue/expense eliminated
+```
+
+## Entity Comparison
+
+Compare metrics across entities:
+
+```{r comparison}
+# Compare total assets
+plot_entity_comparison(
+  collection,
+  metric = "balance",
+  as_of = Sys.Date(),
+  title = "Assets by Entity"
+)
+
+# Compare income
+plot_entity_comparison(
+  collection,
+  metric = "income",
+  as_of = Sys.Date(),
+  title = "Revenue by Entity"
+)
+
+# Compare expenses
+plot_entity_comparison(
+  collection,
+  metric = "expense",
+  as_of = Sys.Date(),
+  title = "Expenses by Entity"
+)
+```
+
+## Consolidation Summary
+
+Get a high-level overview of the consolidation:
+
+```{r summary}
+summary <- consolidation_summary(collection, as_of = Sys.Date())
+
+# Returns:
+# - Total entities
+# - Combined totals (pre-elimination)
+# - Elimination amounts
+# - Consolidated totals (post-elimination)
+# - Intercompany balance check
+```
+
+## Validation
+
+Validate the consolidation for common issues:
+
+```{r validation}
+# Check for issues
+validation <- validate_consolidation(collection)
+
+# Reports:
+# - Unbalanced intercompany accounts
+# - Missing elimination rules
+# - Currency mismatches
+# - Fiscal year misalignment
+
+if (!validation$is_valid) {
+  print(validation$issues)
+}
+```
+
+## Audited Consolidation
+
+Use the Logger monad for audit trails:
+```{r audited}
+# Wrap consolidation with logging
+result <- audited_consolidation(collection, as_of = Sys.Date())
+
+# Get the data
+consolidated <- logged_value(result)
+
+# Get the audit trail
+audit_log <- logged_log(result)
+print(audit_log)
+
+# Write audit to file
+write_audit_log(result, "consolidation-audit.txt")
+```
+
+## Reactive Data Sources for Quarto
+
+For interactive dashboards:
+
+```{r reactive}
+# In a Quarto document with Shiny runtime
+library(shiny)
+
+# Reactive collection
+paths <- reactive({
+  list(
+    parent = input$parent_file,
+    sub_a = input$sub_a_file,
+    sub_b = input$sub_b_file
+  )
+})
+
+rc <- reactive_book_collection(paths)
+
+# Reactive consolidated trial balance
+consolidated_tb <- reactive_consolidated_tb(
+  rc,
+  reactive(input$as_of_date),
+  eliminate_ic = TRUE
+)
+
+# Use in output
+output$consolidated_table <- render_gt({
+  gt_trial_balance(consolidated_tb())
+})
+```
+
+## Best Practices
+
+1. **Consistent Chart of Accounts**: Use the same account structure across entities
+   for accurate consolidation.
+
+2. **Clear IC Account Naming**: Name intercompany accounts clearly
+   (e.g., "Due from Sub A", "Due to Parent").
+
+3. **Regular Reconciliation**: Run `identify_uneliminated_ic()` periodically
+   to catch new intercompany transactions.
+
+4. **Audit Trails**: Use `audited_consolidation()` for formal reporting.
+
+5. **Validation**: Always run `validate_consolidation()` before publishing reports.
+
+## Next Steps
+
+- [Getting Started](getting-started.html): Basic gnucashr usage
+- [Forecasting](forecasting.html): Cash flow projections and Monte Carlo simulation
