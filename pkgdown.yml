@@ -1,0 +1,14 @@
+pandoc: 3.1.11
+pkgdown: 2.2.0
+pkgdown_sha: ~
+articles:
+  consolidation: consolidation.html
+  forecasting: forecasting.html
+  getting-started: getting-started.html
+  importing-data: importing-data.html
+  articles/performance-benchmarks: performance-benchmarks.html
+  articles/rcpp-internals: rcpp-internals.html
+last_built: 2026-01-26T15:55Z
+urls:
+  reference: https://tinyland.gitlab.io/projects/gnucashr/reference
+  article: https://tinyland.gitlab.io/projects/gnucashr/articles

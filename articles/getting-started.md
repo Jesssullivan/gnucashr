@@ -1,0 +1,207 @@
+# Getting Started with gnucashr
+
+## Introduction
+
+gnucashr provides a comprehensive R interface for reading, analyzing,
+and modeling GnuCash accounting data. This vignette covers the basics of
+connecting to GnuCash files and performing common financial analyses.
+
+## Installation
+
+``` r
+# From GitHub (development version)
+# install.packages("devtools")
+devtools::install_github("Jesssullivan/gnucashr")
+```
+
+## Connecting to a GnuCash File
+
+gnucashr supports both SQLite (.gnucash) and XML formats:
+
+``` r
+library(gnucashr)
+
+# Open a GnuCash SQLite file
+gc <- read_gnucash("path/to/books.gnucash")
+
+# For XML files (compressed or uncompressed)
+gc_xml <- read_gnucash("path/to/books.gnucash.xml")
+
+# Check the format
+gc$format
+```
+
+## Exploring Accounts
+
+``` r
+# Get all accounts as a tibble
+accounts <- gc$accounts()
+head(accounts)
+
+# View account hierarchy
+tree <- account_tree(gc)
+print(tree)
+
+# Get a specific account by path
+checking <- gc$get_account("Assets:Current:Checking")
+
+# Get account balance
+bal <- account_balance(gc, "Assets:Current:Checking")
+```
+
+## Working with Transactions
+
+``` r
+# Get all transactions
+txns <- gc$transactions()
+
+# Get transactions for a specific account
+checking_txns <- account_transactions(gc, "Assets:Current:Checking")
+
+# Filter by date range
+recent <- account_transactions(
+  gc,
+  "Assets:Current:Checking",
+  start = as.Date("2024-01-01"),
+  end = as.Date("2024-12-31")
+)
+
+# Calculate running balance
+with_balance <- calculate_running_balance(recent)
+```
+
+## Financial Reports
+
+### Trial Balance
+
+``` r
+# Generate trial balance
+tb <- trial_balance(gc, as_of = Sys.Date())
+print(tb)
+
+# Format as gt table for display
+library(gt)
+gt_trial_balance(tb, title = "Trial Balance - Q4 2024")
+```
+
+### Balance Sheet
+
+``` r
+# Generate balance sheet
+bs <- balance_sheet(gc, as_of = Sys.Date())
+
+# Access sections
+bs$assets
+bs$liabilities
+bs$equity
+
+# Verify accounting equation
+bs$total_assets == bs$total_liabilities + bs$total_equity
+
+# Format for display
+gt_balance_sheet(bs, title = "Balance Sheet")
+```
+
+### Income Statement
+
+``` r
+# Generate income statement for a period
+is <- income_statement(
+  gc,
+  start_date = as.Date("2024-01-01"),
+  end_date = as.Date("2024-12-31")
+)
+
+# Access sections
+is$income
+is$expenses
+is$net_income
+
+# Format for display
+gt_income_statement(is, title = "2024 Income Statement")
+```
+
+## Monthly Activity Analysis
+
+``` r
+# Get monthly activity for an account
+activity <- monthly_activity(gc, "Expenses:Operating")
+
+# Plot the trend
+library(ggplot2)
+plot_monthly_activity(activity, title = "Monthly Operating Expenses")
+```
+
+## Dashboard Metrics
+
+For Quarto dashboards, use the
+[`dashboard_metrics()`](https://tinyland.gitlab.io/projects/gnucashr/reference/dashboard_metrics.md)
+function:
+
+``` r
+# Get key metrics for value boxes
+metrics <- dashboard_metrics(gc, as_of = Sys.Date())
+
+# Available metrics:
+# - total_assets
+# - total_liabilities
+# - net_worth
+# - total_income
+# - total_expenses
+# - net_income
+# - account_count
+# - transaction_count
+
+# Format for display
+format_currency(metrics$net_worth)
+```
+
+## Safe Operations with Result Monad
+
+gnucashr uses a Result monad for error handling:
+
+``` r
+# Safe file reading
+result <- safe_read_gnucash("maybe-missing.gnucash")
+
+# Check result
+if (is_ok(result)) {
+  gc <- unwrap(result)
+  message("Loaded successfully!")
+} else {
+  error <- unwrap_err(result)
+  warning("Failed to load: ", error)
+}
+
+# Pattern matching
+result_match(result,
+  ok_fn = function(gc) {
+    message("Accounts: ", nrow(gc$accounts()))
+  },
+  err_fn = function(e) {
+    warning("Error: ", e)
+  }
+)
+```
+
+## Closing Connections
+
+Always close connections when done:
+
+``` r
+# Close explicitly
+gc$close()
+
+# Or use with() for automatic cleanup
+with_gnucash("books.gnucash", function(gc) {
+  trial_balance(gc)
+})
+```
+
+## Next Steps
+
+- [Multi-Book
+  Consolidation](https://tinyland.gitlab.io/projects/gnucashr/articles/consolidation.md):
+  Managing multiple entities
+- [Forecasting](https://tinyland.gitlab.io/projects/gnucashr/articles/forecasting.md):
+  Cash flow projections and Monte Carlo simulation

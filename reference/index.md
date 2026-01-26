@@ -1,0 +1,600 @@
+# Package index
+
+## Reading GnuCash Files
+
+Connect to GnuCash SQLite and XML files
+
+- [`read_gnucash()`](https://tinyland.gitlab.io/projects/gnucashr/reference/read_gnucash.md)
+  : Read a GnuCash File
+- [`GnuCashDB`](https://tinyland.gitlab.io/projects/gnucashr/reference/GnuCashDB.md)
+  : GnuCash Database Connection
+- [`detect_gnucash_format()`](https://tinyland.gitlab.io/projects/gnucashr/reference/detect_gnucash_format.md)
+  : Detect GnuCash File Format
+- [`parse_gnucash_xml()`](https://tinyland.gitlab.io/projects/gnucashr/reference/parse_gnucash_xml.md)
+  : Parse GnuCash XML File
+
+## Account Operations
+
+Work with the chart of accounts
+
+- [`account_balance()`](https://tinyland.gitlab.io/projects/gnucashr/reference/account_balance.md)
+  : Account Balance
+- [`account_balances()`](https://tinyland.gitlab.io/projects/gnucashr/reference/account_balances.md)
+  : Account Balances for Multiple Accounts
+- [`account_transactions()`](https://tinyland.gitlab.io/projects/gnucashr/reference/account_transactions.md)
+  : Get Account Transactions
+- [`account_tree()`](https://tinyland.gitlab.io/projects/gnucashr/reference/account_tree.md)
+  : Get Account Tree
+- [`aggregate_by_type()`](https://tinyland.gitlab.io/projects/gnucashr/reference/aggregate_by_type.md)
+  : Aggregate by Account Type
+- [`create_account()`](https://tinyland.gitlab.io/projects/gnucashr/reference/create_account.md)
+  : Create a New Account
+- [`create_account_path()`](https://tinyland.gitlab.io/projects/gnucashr/reference/create_account_path.md)
+  : Create Account from Path
+- [`delete_account()`](https://tinyland.gitlab.io/projects/gnucashr/reference/delete_account.md)
+  : Delete Account
+- [`update_account()`](https://tinyland.gitlab.io/projects/gnucashr/reference/update_account.md)
+  : Update Account
+
+## Financial Reports
+
+Generate standard financial statements
+
+- [`trial_balance()`](https://tinyland.gitlab.io/projects/gnucashr/reference/trial_balance.md)
+  : Generate Trial Balance
+- [`balance_sheet()`](https://tinyland.gitlab.io/projects/gnucashr/reference/balance_sheet.md)
+  : Generate Balance Sheet
+- [`income_statement()`](https://tinyland.gitlab.io/projects/gnucashr/reference/income_statement.md)
+  : Generate Income Statement
+- [`income_statement_activity()`](https://tinyland.gitlab.io/projects/gnucashr/reference/income_statement_activity.md)
+  : Get Income Statement Activity
+- [`monthly_activity()`](https://tinyland.gitlab.io/projects/gnucashr/reference/monthly_activity.md)
+  : Monthly Activity Summary
+- [`dashboard_metrics()`](https://tinyland.gitlab.io/projects/gnucashr/reference/dashboard_metrics.md)
+  : Create Value Boxes for Dashboard
+
+## Report Formatting
+
+Format reports for display and export
+
+- [`gt_trial_balance()`](https://tinyland.gitlab.io/projects/gnucashr/reference/gt_trial_balance.md)
+  : Format Trial Balance as gt Table
+- [`gt_balance_sheet()`](https://tinyland.gitlab.io/projects/gnucashr/reference/gt_balance_sheet.md)
+  : Format Balance Sheet as gt Table
+- [`gt_income_statement()`](https://tinyland.gitlab.io/projects/gnucashr/reference/gt_income_statement.md)
+  : Format Income Statement as gt Table
+- [`format_balance_sheet()`](https://tinyland.gitlab.io/projects/gnucashr/reference/format_balance_sheet.md)
+  : Format Balance Sheet for Display
+- [`format_income_statement()`](https://tinyland.gitlab.io/projects/gnucashr/reference/format_income_statement.md)
+  : Format Income Statement for Display
+- [`print_balance_sheet()`](https://tinyland.gitlab.io/projects/gnucashr/reference/print_balance_sheet.md)
+  : Print Balance Sheet
+- [`print_income_statement()`](https://tinyland.gitlab.io/projects/gnucashr/reference/print_income_statement.md)
+  : Print Income Statement
+- [`format_currency()`](https://tinyland.gitlab.io/projects/gnucashr/reference/format_currency.md)
+  : Format Currency for Display
+- [`format_percent()`](https://tinyland.gitlab.io/projects/gnucashr/reference/format_percent.md)
+  : Format Percentage for Display
+
+## Report Comparison
+
+Compare financial data across periods and entities
+
+- [`compare_income_statements()`](https://tinyland.gitlab.io/projects/gnucashr/reference/compare_income_statements.md)
+  : Compare Income Statements
+- [`compare_to_template()`](https://tinyland.gitlab.io/projects/gnucashr/reference/compare_to_template.md)
+  : Compare Template to Existing Accounts
+- [`plot_balance_sheet()`](https://tinyland.gitlab.io/projects/gnucashr/reference/plot_balance_sheet.md)
+  : Create Balance Sheet Bar Chart
+- [`plot_monthly_activity()`](https://tinyland.gitlab.io/projects/gnucashr/reference/plot_monthly_activity.md)
+  : Create Monthly Activity Line Chart
+- [`plot_entity_comparison()`](https://tinyland.gitlab.io/projects/gnucashr/reference/plot_entity_comparison.md)
+  : Create Entity Comparison Chart
+
+## Multi-Book Consolidation
+
+Manage multiple GnuCash books for corporate structures
+
+- [`BookCollection`](https://tinyland.gitlab.io/projects/gnucashr/reference/BookCollection.md)
+  : BookCollection Class
+- [`book_collection()`](https://tinyland.gitlab.io/projects/gnucashr/reference/book_collection.md)
+  : Create a Book Collection
+- [`consolidation_summary()`](https://tinyland.gitlab.io/projects/gnucashr/reference/consolidation_summary.md)
+  : Consolidation Summary Report
+- [`build_consolidated_trial_balance()`](https://tinyland.gitlab.io/projects/gnucashr/reference/build_consolidated_trial_balance.md)
+  : Build Consolidated Trial Balance
+- [`combine_trial_balances()`](https://tinyland.gitlab.io/projects/gnucashr/reference/combine_trial_balances.md)
+  : Combine Trial Balances from Multiple Books
+- [`validate_consolidation()`](https://tinyland.gitlab.io/projects/gnucashr/reference/validate_consolidation.md)
+  : Validate Consolidation
+- [`calculate_consolidation_adjustments()`](https://tinyland.gitlab.io/projects/gnucashr/reference/calculate_consolidation_adjustments.md)
+  : Calculate Consolidation Adjustments
+
+## Intercompany Elimination
+
+Eliminate intercompany transactions for consolidated reporting
+
+- [`apply_ic_eliminations()`](https://tinyland.gitlab.io/projects/gnucashr/reference/apply_ic_eliminations.md)
+  : Apply Intercompany Eliminations
+- [`calculate_ic_elimination_entry()`](https://tinyland.gitlab.io/projects/gnucashr/reference/calculate_ic_elimination_entry.md)
+  : Calculate IC Elimination Journal Entry
+- [`create_standard_ic_rules()`](https://tinyland.gitlab.io/projects/gnucashr/reference/create_standard_ic_rules.md)
+  : Create Standard IC Rule Set
+- [`identify_uneliminated_ic()`](https://tinyland.gitlab.io/projects/gnucashr/reference/identify_uneliminated_ic.md)
+  : Identify Uneliminated IC Transactions
+
+## Lazy Forecasting
+
+Build computation pipelines for financial projections
+
+- [`LazyForecast`](https://tinyland.gitlab.io/projects/gnucashr/reference/LazyForecast.md)
+  : LazyForecast R6 Class
+- [`lazy_forecast()`](https://tinyland.gitlab.io/projects/gnucashr/reference/lazy_forecast.md)
+  : Create a new LazyForecast
+- [`lazy_result()`](https://tinyland.gitlab.io/projects/gnucashr/reference/lazy_result.md)
+  : Wrap LazyForecast with Result Monad
+- [`forecast_expr()`](https://tinyland.gitlab.io/projects/gnucashr/reference/forecast_expr.md)
+  : Create Forecast Expression
+- [`from_book()`](https://tinyland.gitlab.io/projects/gnucashr/reference/from_book.md)
+  : Create Forecast from GnuCash Book
+- [`from_collection()`](https://tinyland.gitlab.io/projects/gnucashr/reference/from_collection.md)
+  : Create Forecast from Book Collection
+- [`from_config()`](https://tinyland.gitlab.io/projects/gnucashr/reference/from_config.md)
+  : Create Forecast from Entity Config
+- [`from_data()`](https://tinyland.gitlab.io/projects/gnucashr/reference/from_data.md)
+  : Create Forecast from Data Frame
+- [`lf_collect()`](https://tinyland.gitlab.io/projects/gnucashr/reference/lf_collect.md)
+  : Collect Forecast Results
+- [`lf_filter()`](https://tinyland.gitlab.io/projects/gnucashr/reference/lf_filter.md)
+  : Filter Forecast Data (Pipe-Friendly)
+- [`lf_grow()`](https://tinyland.gitlab.io/projects/gnucashr/reference/lf_grow.md)
+  : Grow Revenue (Pipe-Friendly)
+- [`lf_monte_carlo()`](https://tinyland.gitlab.io/projects/gnucashr/reference/lf_monte_carlo.md)
+  : Monte Carlo Simulation (Pipe-Friendly)
+- [`lf_scenario()`](https://tinyland.gitlab.io/projects/gnucashr/reference/lf_scenario.md)
+  : Create Named Scenario (Pipe-Friendly)
+- [`lf_sensitivity()`](https://tinyland.gitlab.io/projects/gnucashr/reference/lf_sensitivity.md)
+  : Sensitivity Analysis (Pipe-Friendly)
+- [`compare_forecasts()`](https://tinyland.gitlab.io/projects/gnucashr/reference/compare_forecasts.md)
+  : Compare Multiple Forecasts
+
+## Quick Forecasting
+
+Simple interfaces for common forecasting tasks
+
+- [`quick_monte_carlo()`](https://tinyland.gitlab.io/projects/gnucashr/reference/quick_monte_carlo.md)
+  : Quick Monte Carlo Forecast
+- [`quick_sensitivity()`](https://tinyland.gitlab.io/projects/gnucashr/reference/quick_sensitivity.md)
+  : Quick Sensitivity Analysis
+- [`combine_forecast_results()`](https://tinyland.gitlab.io/projects/gnucashr/reference/combine_forecast_results.md)
+  : Combine Forecast Results
+
+## Monte Carlo Simulation
+
+Rcpp-accelerated parallel Monte Carlo
+
+- [`monte_carlo_parallel()`](https://tinyland.gitlab.io/projects/gnucashr/reference/monte_carlo_parallel.md)
+  : Parallel Monte Carlo Simulation
+- [`monte_carlo_multi_entity()`](https://tinyland.gitlab.io/projects/gnucashr/reference/monte_carlo_multi_entity.md)
+  : Multi-Entity Parallel Monte Carlo
+- [`extract_mc_summary()`](https://tinyland.gitlab.io/projects/gnucashr/reference/extract_mc_summary.md)
+  : Extract Summary from Result
+- [`extract_quantile()`](https://tinyland.gitlab.io/projects/gnucashr/reference/extract_quantile.md)
+  : Extract Quantile from Result
+- [`plot_monte_carlo()`](https://tinyland.gitlab.io/projects/gnucashr/reference/plot_monte_carlo.md)
+  : Create Monte Carlo Fan Chart
+
+## Scenario & Sensitivity Analysis
+
+Parallel scenario projection and sensitivity grids
+
+- [`parallel_project_scenarios()`](https://tinyland.gitlab.io/projects/gnucashr/reference/parallel_project_scenarios.md)
+  : Parallel Scenario Projection
+- [`parallel_sensitivity_grid()`](https://tinyland.gitlab.io/projects/gnucashr/reference/parallel_sensitivity_grid.md)
+  : Parallel Sensitivity Grid
+- [`batch_project_growth()`](https://tinyland.gitlab.io/projects/gnucashr/reference/batch_project_growth.md)
+  : Batch Growth Projection
+- [`sequential_projection()`](https://tinyland.gitlab.io/projects/gnucashr/reference/sequential_projection.md)
+  : Sequential Projection (Non-Parallel Fallback)
+- [`plot_sensitivity()`](https://tinyland.gitlab.io/projects/gnucashr/reference/plot_sensitivity.md)
+  : Create Sensitivity Heatmap
+
+## Audited Operations
+
+Forecast operations with audit trail logging
+
+- [`audited_collect()`](https://tinyland.gitlab.io/projects/gnucashr/reference/audited_collect.md)
+  : Audited Collect
+- [`audited_compare_forecasts()`](https://tinyland.gitlab.io/projects/gnucashr/reference/audited_compare_forecasts.md)
+  : Audited Forecast Comparison
+- [`audited_consolidation()`](https://tinyland.gitlab.io/projects/gnucashr/reference/audited_consolidation.md)
+  : Audited Consolidation
+- [`audited_forecast()`](https://tinyland.gitlab.io/projects/gnucashr/reference/audited_forecast.md)
+  : Create Audited Forecast
+- [`audited_monte_carlo()`](https://tinyland.gitlab.io/projects/gnucashr/reference/audited_monte_carlo.md)
+  : Audited Monte Carlo
+- [`audited_sensitivity()`](https://tinyland.gitlab.io/projects/gnucashr/reference/audited_sensitivity.md)
+  : Audited Sensitivity Analysis
+- [`audited_trial_balance()`](https://tinyland.gitlab.io/projects/gnucashr/reference/audited_trial_balance.md)
+  : Audited Trial Balance
+- [`print_forecast_audit()`](https://tinyland.gitlab.io/projects/gnucashr/reference/print_forecast_audit.md)
+  : Print Forecast Audit Summary
+- [`write_forecast_audit()`](https://tinyland.gitlab.io/projects/gnucashr/reference/write_forecast_audit.md)
+  : Write Forecast Audit Log
+- [`write_audit_log()`](https://tinyland.gitlab.io/projects/gnucashr/reference/write_audit_log.md)
+  : Write Audit Log to File
+
+## Forecast Result Operations
+
+Transform and combine forecast results
+
+- [`bind_forecast_result()`](https://tinyland.gitlab.io/projects/gnucashr/reference/bind_forecast_result.md)
+  : Chain Forecast Results
+- [`bind_logged_forecast()`](https://tinyland.gitlab.io/projects/gnucashr/reference/bind_logged_forecast.md)
+  : Bind Logged Forecasts
+- [`map_forecast_result()`](https://tinyland.gitlab.io/projects/gnucashr/reference/map_forecast_result.md)
+  : Map Result Over Forecasts
+- [`map_logged_forecast()`](https://tinyland.gitlab.io/projects/gnucashr/reference/map_logged_forecast.md)
+  : Map Over Logged Forecast
+- [`validate_forecast_params()`](https://tinyland.gitlab.io/projects/gnucashr/reference/validate_forecast_params.md)
+  : Validate Forecast Parameters
+
+## Result Monad (Error Handling)
+
+Functional error handling with Result type
+
+- [`ok()`](https://tinyland.gitlab.io/projects/gnucashr/reference/ok.md)
+  : Create Success Result
+- [`err()`](https://tinyland.gitlab.io/projects/gnucashr/reference/err.md)
+  : Create Error Result
+- [`is_ok()`](https://tinyland.gitlab.io/projects/gnucashr/reference/is_ok.md)
+  : Check if Result is Ok
+- [`is_err()`](https://tinyland.gitlab.io/projects/gnucashr/reference/is_err.md)
+  : Check if Result is Error
+- [`unwrap()`](https://tinyland.gitlab.io/projects/gnucashr/reference/unwrap.md)
+  : Unwrap Result Value
+- [`unwrap_err()`](https://tinyland.gitlab.io/projects/gnucashr/reference/unwrap_err.md)
+  : Unwrap Error
+- [`result_bind()`](https://tinyland.gitlab.io/projects/gnucashr/reference/result_bind.md)
+  : Bind Result (Monadic Bind)
+- [`result_map()`](https://tinyland.gitlab.io/projects/gnucashr/reference/result_map.md)
+  : Map Over Result (Functor)
+- [`result_map_err()`](https://tinyland.gitlab.io/projects/gnucashr/reference/result_map_err.md)
+  : Map Over Error
+- [`result_match()`](https://tinyland.gitlab.io/projects/gnucashr/reference/result_match.md)
+  : Pattern Match on Result
+- [`try_result()`](https://tinyland.gitlab.io/projects/gnucashr/reference/try_result.md)
+  : Try Expression as Result
+- [`combine_results()`](https://tinyland.gitlab.io/projects/gnucashr/reference/combine_results.md)
+  : Combine Results
+
+## Safe Operations
+
+Result-wrapped versions of common operations
+
+- [`safe_collect()`](https://tinyland.gitlab.io/projects/gnucashr/reference/safe_collect.md)
+  : Safe Collect with Result Monad
+- [`safe_compare_forecasts()`](https://tinyland.gitlab.io/projects/gnucashr/reference/safe_compare_forecasts.md)
+  : Safe Comparison of Forecasts
+- [`safe_consolidation()`](https://tinyland.gitlab.io/projects/gnucashr/reference/safe_consolidation.md)
+  : Safe Consolidation
+- [`safe_create_account()`](https://tinyland.gitlab.io/projects/gnucashr/reference/safe_create_account.md)
+  : Safe Create Account
+- [`safe_forecast_pipeline()`](https://tinyland.gitlab.io/projects/gnucashr/reference/safe_forecast_pipeline.md)
+  : Safe Forecast Pipeline
+- [`safe_post_transaction()`](https://tinyland.gitlab.io/projects/gnucashr/reference/safe_post_transaction.md)
+  : Safe Post Transaction
+- [`safe_quick_monte_carlo()`](https://tinyland.gitlab.io/projects/gnucashr/reference/safe_quick_monte_carlo.md)
+  : Safe Quick Monte Carlo
+- [`safe_quick_sensitivity()`](https://tinyland.gitlab.io/projects/gnucashr/reference/safe_quick_sensitivity.md)
+  : Safe Quick Sensitivity
+- [`safe_read_gnucash()`](https://tinyland.gitlab.io/projects/gnucashr/reference/safe_read_gnucash.md)
+  : Safe Read GnuCash
+- [`safe_trial_balance()`](https://tinyland.gitlab.io/projects/gnucashr/reference/safe_trial_balance.md)
+  : Safe Trial Balance
+
+## Logger Monad
+
+Track computation steps with audit logging
+
+- [`logged()`](https://tinyland.gitlab.io/projects/gnucashr/reference/logged.md)
+  : Create Logged Operation Result
+- [`logged_value()`](https://tinyland.gitlab.io/projects/gnucashr/reference/logged_value.md)
+  : Get Value from Logged Result
+- [`logged_log()`](https://tinyland.gitlab.io/projects/gnucashr/reference/logged_log.md)
+  : Get Log from Logged Result
+- [`log_append()`](https://tinyland.gitlab.io/projects/gnucashr/reference/log_append.md)
+  : Append to Log
+- [`log_bind()`](https://tinyland.gitlab.io/projects/gnucashr/reference/log_bind.md)
+  : Bind Logged Operations (Monadic Bind)
+- [`log_map()`](https://tinyland.gitlab.io/projects/gnucashr/reference/log_map.md)
+  : Map Over Logged Value
+
+## Rcpp Utilities - Fractions
+
+High-performance fraction arithmetic
+
+- [`fraction_to_double()`](https://tinyland.gitlab.io/projects/gnucashr/reference/fraction_to_double.md)
+  : Convert Fractions to Double
+- [`double_to_fraction()`](https://tinyland.gitlab.io/projects/gnucashr/reference/double_to_fraction.md)
+  : Convert Double to Fraction
+- [`add_fractions()`](https://tinyland.gitlab.io/projects/gnucashr/reference/add_fractions.md)
+  : Add Two Fractions
+- [`validate_splits_balance()`](https://tinyland.gitlab.io/projects/gnucashr/reference/validate_splits_balance.md)
+  : Validate Splits Balance
+
+## Rcpp Utilities - GUIDs
+
+GnuCash-format GUID generation and validation
+
+- [`generate_guid()`](https://tinyland.gitlab.io/projects/gnucashr/reference/generate_guid.md)
+  : Generate GnuCash-Format GUID
+- [`generate_guids()`](https://tinyland.gitlab.io/projects/gnucashr/reference/generate_guids.md)
+  : Generate Multiple GUIDs
+- [`validate_guid()`](https://tinyland.gitlab.io/projects/gnucashr/reference/validate_guid.md)
+  : Validate GnuCash GUID Format
+- [`validate_guids()`](https://tinyland.gitlab.io/projects/gnucashr/reference/validate_guids.md)
+  : Validate Account GUID Format
+- [`check_guid_uniqueness()`](https://tinyland.gitlab.io/projects/gnucashr/reference/check_guid_uniqueness.md)
+  : Check for Duplicate GUIDs
+
+## Rcpp Utilities - Validation
+
+Transaction validation and balance calculation
+
+- [`validate_transaction_balance()`](https://tinyland.gitlab.io/projects/gnucashr/reference/validate_transaction_balance.md)
+  : Validate Transaction Balance
+- [`validate_split_values()`](https://tinyland.gitlab.io/projects/gnucashr/reference/validate_split_values.md)
+  : Validate Split Values
+- [`calculate_running_balance()`](https://tinyland.gitlab.io/projects/gnucashr/reference/calculate_running_balance.md)
+  : Calculate Running Balance
+
+## Transaction Operations
+
+Create and modify transactions
+
+- [`post_transaction()`](https://tinyland.gitlab.io/projects/gnucashr/reference/post_transaction.md)
+  : Post a Transaction
+- [`post_transfer()`](https://tinyland.gitlab.io/projects/gnucashr/reference/post_transfer.md)
+  : Post Simple Transfer
+- [`batch_post_transactions()`](https://tinyland.gitlab.io/projects/gnucashr/reference/batch_post_transactions.md)
+  : Batch Post Transactions
+- [`delete_transaction()`](https://tinyland.gitlab.io/projects/gnucashr/reference/delete_transaction.md)
+  : Delete Transaction
+- [`void_transaction()`](https://tinyland.gitlab.io/projects/gnucashr/reference/void_transaction.md)
+  : Void Transaction
+
+## Backup & Recovery
+
+Manage GnuCash file backups
+
+- [`create_backup()`](https://tinyland.gitlab.io/projects/gnucashr/reference/create_backup.md)
+  : Create Backup of GnuCash File
+- [`restore_backup()`](https://tinyland.gitlab.io/projects/gnucashr/reference/restore_backup.md)
+  : Restore from Backup
+- [`list_backups()`](https://tinyland.gitlab.io/projects/gnucashr/reference/list_backups.md)
+  : List Available Backups
+- [`backup_summary()`](https://tinyland.gitlab.io/projects/gnucashr/reference/backup_summary.md)
+  : Backup Info Summary
+- [`clean_old_backups()`](https://tinyland.gitlab.io/projects/gnucashr/reference/clean_old_backups.md)
+  : Clean Old Backups
+- [`with_backup()`](https://tinyland.gitlab.io/projects/gnucashr/reference/with_backup.md)
+  : Automatic Backup Wrapper
+
+## Account Templates
+
+Standardized chart of accounts templates
+
+- [`load_template()`](https://tinyland.gitlab.io/projects/gnucashr/reference/load_template.md)
+  : Load an Account Template
+- [`list_templates()`](https://tinyland.gitlab.io/projects/gnucashr/reference/list_templates.md)
+  : List Available Account Templates
+- [`apply_template()`](https://tinyland.gitlab.io/projects/gnucashr/reference/apply_template.md)
+  : Apply Template to GnuCash Database
+- [`compare_to_template()`](https://tinyland.gitlab.io/projects/gnucashr/reference/compare_to_template.md)
+  : Compare Template to Existing Accounts
+- [`flatten_template()`](https://tinyland.gitlab.io/projects/gnucashr/reference/flatten_template.md)
+  : Flatten Account Template to Data Frame
+- [`template_diagram()`](https://tinyland.gitlab.io/projects/gnucashr/reference/template_diagram.md)
+  : Create Account Hierarchy Diagram
+
+## Budgets
+
+Budget creation and comparison
+
+- [`Budget`](https://tinyland.gitlab.io/projects/gnucashr/reference/Budget.md)
+  : Budget R6 Class
+- [`BudgetComparison`](https://tinyland.gitlab.io/projects/gnucashr/reference/BudgetComparison.md)
+  : BudgetComparison R6 Class
+- [`budget_from_df()`](https://tinyland.gitlab.io/projects/gnucashr/reference/budget_from_df.md)
+  : Convert Data Frame to Budget Object
+- [`annual_budget()`](https://tinyland.gitlab.io/projects/gnucashr/reference/annual_budget.md)
+  : Create an Annual Budget
+- [`quarterly_budget()`](https://tinyland.gitlab.io/projects/gnucashr/reference/quarterly_budget.md)
+  : Create a Quarterly Budget
+- [`monthly_budget()`](https://tinyland.gitlab.io/projects/gnucashr/reference/monthly_budget.md)
+  : Create a Monthly Budget
+
+## Scheduled Transactions
+
+Recurring transaction management
+
+- [`ScheduledTransaction`](https://tinyland.gitlab.io/projects/gnucashr/reference/ScheduledTransaction.md)
+  : ScheduledTransaction R6 Class
+- [`ScheduledTransactionManager`](https://tinyland.gitlab.io/projects/gnucashr/reference/ScheduledTransactionManager.md)
+  : ScheduledTransactionManager R6 Class
+- [`scheduled_from_df()`](https://tinyland.gitlab.io/projects/gnucashr/reference/scheduled_from_df.md)
+  : Convert Data Frame to ScheduledTransaction Objects
+- [`annual_scheduled()`](https://tinyland.gitlab.io/projects/gnucashr/reference/annual_scheduled.md)
+  : Create an Annual Scheduled Transaction
+- [`monthly_scheduled()`](https://tinyland.gitlab.io/projects/gnucashr/reference/monthly_scheduled.md)
+  : Create a Monthly Scheduled Transaction
+- [`weekly_scheduled()`](https://tinyland.gitlab.io/projects/gnucashr/reference/weekly_scheduled.md)
+  : Create a Weekly Scheduled Transaction
+
+## Commodities & Securities
+
+Currency and security management
+
+- [`Commodity`](https://tinyland.gitlab.io/projects/gnucashr/reference/Commodity.md)
+  : Commodity R6 Class
+- [`currency()`](https://tinyland.gitlab.io/projects/gnucashr/reference/currency.md)
+  : Create a Currency Commodity
+- [`security()`](https://tinyland.gitlab.io/projects/gnucashr/reference/security.md)
+  : Create a Stock/Security Commodity
+- [`commodities_from_df()`](https://tinyland.gitlab.io/projects/gnucashr/reference/commodities_from_df.md)
+  : Convert Data Frame to Commodity Objects
+
+## Prices & Price Database
+
+Historical price tracking
+
+- [`Price`](https://tinyland.gitlab.io/projects/gnucashr/reference/Price.md)
+  : Price R6 Class
+- [`PriceDB`](https://tinyland.gitlab.io/projects/gnucashr/reference/PriceDB.md)
+  : PriceDB R6 Class
+- [`new_price()`](https://tinyland.gitlab.io/projects/gnucashr/reference/new_price.md)
+  : Create a Price from Decimal Value
+- [`prices_from_df()`](https://tinyland.gitlab.io/projects/gnucashr/reference/prices_from_df.md)
+  : Convert Data Frame to Price Objects
+- [`pricedb_from_df()`](https://tinyland.gitlab.io/projects/gnucashr/reference/pricedb_from_df.md)
+  : Create PriceDB from Data Frame
+
+## Lots & Cost Basis
+
+Investment lot tracking for capital gains
+
+- [`Lot`](https://tinyland.gitlab.io/projects/gnucashr/reference/Lot.md)
+  : Lot R6 Class
+- [`LotManager`](https://tinyland.gitlab.io/projects/gnucashr/reference/LotManager.md)
+  : LotManager R6 Class
+- [`lots_from_df()`](https://tinyland.gitlab.io/projects/gnucashr/reference/lots_from_df.md)
+  : Convert Data Frame to Lot Objects
+
+## Quarto/Shiny Reactive
+
+Reactive wrappers for interactive dashboards
+
+- [`reactive_account_transactions()`](https://tinyland.gitlab.io/projects/gnucashr/reference/reactive_account_transactions.md)
+  : Create Reactive Account Transactions
+- [`reactive_balance_sheet()`](https://tinyland.gitlab.io/projects/gnucashr/reference/reactive_balance_sheet.md)
+  : Create Reactive Balance Sheet
+- [`reactive_book_collection()`](https://tinyland.gitlab.io/projects/gnucashr/reference/reactive_book_collection.md)
+  : Create Reactive Book Collection
+- [`reactive_consolidated_tb()`](https://tinyland.gitlab.io/projects/gnucashr/reference/reactive_consolidated_tb.md)
+  : Create Reactive Consolidated Trial Balance
+- [`reactive_forecast()`](https://tinyland.gitlab.io/projects/gnucashr/reference/reactive_forecast.md)
+  : Create Reactive Forecast
+- [`reactive_gnucash()`](https://tinyland.gitlab.io/projects/gnucashr/reference/reactive_gnucash.md)
+  : Create Reactive GnuCash Connection
+- [`reactive_income_statement()`](https://tinyland.gitlab.io/projects/gnucashr/reference/reactive_income_statement.md)
+  : Create Reactive Income Statement
+- [`reactive_monte_carlo()`](https://tinyland.gitlab.io/projects/gnucashr/reference/reactive_monte_carlo.md)
+  : Create Reactive Monte Carlo Simulation
+- [`reactive_trial_balance()`](https://tinyland.gitlab.io/projects/gnucashr/reference/reactive_trial_balance.md)
+  : Create Reactive Trial Balance
+
+## Data Import - OFX/QFX
+
+Import bank statements in OFX format
+
+- [`import_ofx()`](https://tinyland.gitlab.io/projects/gnucashr/reference/import_ofx.md)
+  : Import OFX/QFX File
+- [`detect_ofx_version()`](https://tinyland.gitlab.io/projects/gnucashr/reference/detect_ofx_version.md)
+  : Detect OFX Version
+- [`validate_ofx_import()`](https://tinyland.gitlab.io/projects/gnucashr/reference/validate_ofx_import.md)
+  : Validate OFX Import Data
+- [`import_ofx_to_gnucash()`](https://tinyland.gitlab.io/projects/gnucashr/reference/import_ofx_to_gnucash.md)
+  : Import OFX Transactions to GnuCash
+- [`parse_ofx_cpp()`](https://tinyland.gitlab.io/projects/gnucashr/reference/parse_ofx_cpp.md)
+  : Parse OFX Content
+
+## Data Import - CSV
+
+Import from PayPal, Stripe, QuickBooks CSV exports
+
+- [`import_paypal_csv()`](https://tinyland.gitlab.io/projects/gnucashr/reference/import_paypal_csv.md)
+  : Import PayPal Activity CSV Export
+- [`import_stripe_csv()`](https://tinyland.gitlab.io/projects/gnucashr/reference/import_stripe_csv.md)
+  : Import Stripe Balance Transactions CSV
+- [`import_quickbooks_csv()`](https://tinyland.gitlab.io/projects/gnucashr/reference/import_quickbooks_csv.md)
+  : Import QuickBooks Transaction CSV
+- [`combine_csv_imports()`](https://tinyland.gitlab.io/projects/gnucashr/reference/combine_csv_imports.md)
+  : Combine Multiple CSV Imports
+- [`preview_csv_mapping()`](https://tinyland.gitlab.io/projects/gnucashr/reference/preview_csv_mapping.md)
+  : Preview CSV Column Mapping
+- [`is_csv_import()`](https://tinyland.gitlab.io/projects/gnucashr/reference/is_csv_import.md)
+  : Check if Object is a gnucashr CSV Import
+
+## Database Creation
+
+Create new GnuCash databases
+
+- [`create_gnucash()`](https://tinyland.gitlab.io/projects/gnucashr/reference/create_gnucash.md)
+  : Create a New GnuCash SQLite Database
+
+## Print Methods
+
+S3 print methods for package objects
+
+- [`print(`*`<gnucashr_csv_import>`*`)`](https://tinyland.gitlab.io/projects/gnucashr/reference/print.gnucashr_csv_import.md)
+  : Print Method for gnucashr CSV Import
+- [`print(`*`<logged>`*`)`](https://tinyland.gitlab.io/projects/gnucashr/reference/print.logged.md)
+  : Print Logged Object
+- [`print(`*`<result>`*`)`](https://tinyland.gitlab.io/projects/gnucashr/reference/print.result.md)
+  : Print Result Object
+- [`print_balance_sheet()`](https://tinyland.gitlab.io/projects/gnucashr/reference/print_balance_sheet.md)
+  : Print Balance Sheet
+- [`print_forecast_audit()`](https://tinyland.gitlab.io/projects/gnucashr/reference/print_forecast_audit.md)
+  : Print Forecast Audit Summary
+- [`print_income_statement()`](https://tinyland.gitlab.io/projects/gnucashr/reference/print_income_statement.md)
+  : Print Income Statement
+- [`print_ofx_summary()`](https://tinyland.gitlab.io/projects/gnucashr/reference/print_ofx_summary.md)
+  : Print OFX Import Summary
+
+## Internal Documentation
+
+Grouped documentation and internal helpers
+
+- [`account-templates`](https://tinyland.gitlab.io/projects/gnucashr/reference/account-templates.md)
+  : Account Templates
+- [`balance-sheet`](https://tinyland.gitlab.io/projects/gnucashr/reference/balance-sheet.md)
+  : Balance Sheet Report
+- [`consolidation`](https://tinyland.gitlab.io/projects/gnucashr/reference/consolidation.md)
+  : Consolidation Engine
+- [`detect_ofx_version_cpp()`](https://tinyland.gitlab.io/projects/gnucashr/reference/detect_ofx_version_cpp.md)
+  : Detect OFX File Version
+- [`extract_ofx_account_info()`](https://tinyland.gitlab.io/projects/gnucashr/reference/extract_ofx_account_info.md)
+  : Extract OFX Account Info
+- [`forecast-expr`](https://tinyland.gitlab.io/projects/gnucashr/reference/forecast-expr.md)
+  : Forecasting Expression API
+- [`forecast-logged`](https://tinyland.gitlab.io/projects/gnucashr/reference/forecast-logged.md)
+  : Logger Monad Integration for LazyForecast
+- [`forecast-result`](https://tinyland.gitlab.io/projects/gnucashr/reference/forecast-result.md)
+  : Result Monad Integration for LazyForecast
+- [`get_ofx_account_info()`](https://tinyland.gitlab.io/projects/gnucashr/reference/get_ofx_account_info.md)
+  : Get OFX Account Information
+- [`gnucash-xml`](https://tinyland.gitlab.io/projects/gnucashr/reference/gnucash-xml.md)
+  : GnuCash XML Parser
+- [`import-ofx`](https://tinyland.gitlab.io/projects/gnucashr/reference/import-ofx.md)
+  : OFX/QFX Import Functions
+- [`income-statement`](https://tinyland.gitlab.io/projects/gnucashr/reference/income-statement.md)
+  : Income Statement Report
+- [`intercompany`](https://tinyland.gitlab.io/projects/gnucashr/reference/intercompany.md)
+  : Intercompany Elimination Functions
+- [`monad-logger`](https://tinyland.gitlab.io/projects/gnucashr/reference/monad-logger.md)
+  : Logger Monad for Audit Trails
+- [`monad-result`](https://tinyland.gitlab.io/projects/gnucashr/reference/monad-result.md)
+  : Result Monad for Safe Error Handling
+- [`validate_csv_import()`](https://tinyland.gitlab.io/projects/gnucashr/reference/validate_csv_import.md)
+  : Validate CSV Import
+- [`print_ofx_summary()`](https://tinyland.gitlab.io/projects/gnucashr/reference/print_ofx_summary.md)
+  : Print OFX Import Summary
+- [`write-backup`](https://tinyland.gitlab.io/projects/gnucashr/reference/write-backup.md)
+  : Backup and Restore Functions
+- [`write-transaction`](https://tinyland.gitlab.io/projects/gnucashr/reference/write-transaction.md)
+  : Transaction Write Operations
+- [`reports`](https://tinyland.gitlab.io/projects/gnucashr/reference/reports.md)
+  : Financial Reports
+- [`write-account`](https://tinyland.gitlab.io/projects/gnucashr/reference/write-account.md)
+  : Account Write Operations
