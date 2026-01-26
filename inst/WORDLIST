@@ -160,3 +160,71 @@ unwrap
 # Author and organization
 Tinyland
 Jesssullivan
+sulliwood
+
+# OFX/QFX terms
+OFX
+QFX
+BANKID
+FITID
+CURDEF
+fitids
+trntype
+
+# CI/CD and tools
+GitLab
+codecov
+pkgdown
+CMD
+PBT
+furrr
+
+# Rcpp types
+CharacterVector
+IntegerMatrix
+NumericVector
+Const
+RMatrix
+RVector
+
+# Technical terms
+auditable
+Benchmarking
+Chainable
+cpp
+deduplication
+deterministically
+EPYC
+fn
+gc
+gnucash
+GOOGL
+guid
+gz
+gzip
+IC
+ISIN
+lf
+md
+Mersenne
+nav
+parallelization
+Parallelization
+params
+paypal
+qbo
+QBO
+reparent
+schedxactions
+sqlite
+struct
+uneliminated
+Uneliminated
+
+# QuickBooks and integrations
+QuickBooks
+Chargebacks
+
+# Package-specific
+gnucashr's
+csv

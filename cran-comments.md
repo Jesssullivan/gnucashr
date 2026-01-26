@@ -36,7 +36,7 @@ Duration: ~2-3 minutes
 On first submission, the following NOTE is expected:
 ```
 * checking CRAN incoming feasibility ... NOTE
-Maintainer: 'Jess Sullivan <jess@tinyland.dev>'
+Maintainer: 'Jess Sullivan <jess@sulliwood.org>'
 
 New submission
 
@@ -134,5 +134,5 @@ This is a new submission.
 
 ---
 
-Submitted by: Jess Sullivan <jess@tinyland.dev>
+Submitted by: Jess Sullivan <jess@sulliwood.org>
 Date: 2026-01-25

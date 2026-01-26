@@ -330,8 +330,8 @@ import_ofx_to_gnucash <- function(ofx_data,
     tryCatch({
       result <- post_transaction(
         gc,
-        date = row$date,
-        description = if_else(is.na(row$description), "OFX Import", row$description),
+        post_date = row$date,
+        description = dplyr::if_else(is.na(row$description), "OFX Import", row$description),
         splits = list(
           list(
             account_guid = target$guid,
@@ -344,7 +344,7 @@ import_ofx_to_gnucash <- function(ofx_data,
             memo = NA_character_
           )
         ),
-        currency_guid = currency_guid
+        currency = currency_guid
       )
       imported_guids[i] <- result$tx_guid
     }, error = function(e) {

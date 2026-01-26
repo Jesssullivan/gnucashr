@@ -16,3 +16,7 @@
 ^check$
 ^coverage\.xml$
 ^test-results\.xml$
+^cran-comments\.md$
+^\.covrignore$
+^\.env$
+^\.claude$

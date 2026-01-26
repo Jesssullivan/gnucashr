@@ -43,47 +43,82 @@ close(gc)
 
 ## Features
 
-### Core (v0.2.0)
-- SQLite and XML file support via `GnuCashDB` R6 class
-- Account tree navigation with path-based access
-- Trial balance, balance sheet, income statement
-- Transaction queries with date filtering
-- Commodity and price database access
-- Budget and scheduled transaction support
-- Lot tracking for cost basis
+### Core Reading & Writing
+Read GnuCash SQLite and XML files; create accounts and post transactions with automatic backup.
+- `read_gnucash()`, `GnuCashDB`, `parse_gnucash_xml()`
+- `create_account()`, `post_transaction()`, `post_transfer()`
+- `create_backup()`, `restore_backup()`, `with_backup()`
 
-### Multi-Entity
-- `BookCollection` for consolidated reporting
-- Intercompany transaction elimination
-- Per-entity and consolidated views
+### Account Operations
+Navigate account hierarchies and query balances with path-based access.
+- `account_tree()`, `account_balance()`, `account_balances()`
+- `account_transactions()`, `aggregate_by_type()`
 
-### Forecasting
-- Lazy evaluation via `LazyForecast` class
-- Monte Carlo simulation (Rcpp-accelerated)
-- Sensitivity analysis
-- Scenario comparison
+### Financial Reports
+Generate standard financial statements with formatting and comparison tools.
+- `trial_balance()`, `balance_sheet()`, `income_statement()`
+- `gt_trial_balance()`, `gt_balance_sheet()`, `gt_income_statement()`
+- `compare_income_statements()`, `plot_balance_sheet()`
 
-### Write Operations
-- Create accounts and transactions
-- Automatic backup before writes
-- GUID generation and validation
+### Multi-Book Consolidation
+Manage corporate structures with multiple GnuCash books and intercompany elimination.
+- `BookCollection`, `consolidation_summary()`
+- `build_consolidated_trial_balance()`, `validate_consolidation()`
+- `apply_ic_eliminations()`, `create_standard_ic_rules()`
 
-### Error Handling
-- `Result` type (Ok/Err) for explicit error handling
-- `Logged` type for audit trails
-- Safe wrappers for all operations
+### Forecasting - Lazy Evaluation
+Build deferred computation pipelines for financial projections.
+- `LazyForecast`, `from_book()`, `from_collection()`
+- `lf_grow()`, `lf_scenario()`, `lf_monte_carlo()`, `lf_sensitivity()`
 
-### Data Import
-- OFX/QFX bank statement import (Rcpp-accelerated parsing)
-- PayPal CSV import with fee extraction
-- Stripe CSV import with payout matching
-- QuickBooks CSV import (QBO/Desktop formats)
-- Duplicate detection and validation
+### Forecasting - Monte Carlo & Sensitivity
+Rcpp-accelerated parallel Monte Carlo simulation and sensitivity analysis.
+- `monte_carlo_parallel()`, `quick_monte_carlo()`, `extract_mc_summary()`
+- `parallel_sensitivity_grid()`, `quick_sensitivity()`, `plot_sensitivity()`
 
-### Integration
-- Quarto reactive widgets for dashboards
+### Error Handling - Result Monad
+Functional error handling with explicit Ok/Err types for safe operations.
+- `ok()`, `err()`, `is_ok()`, `is_err()`, `unwrap()`
+- `result_bind()`, `result_map()`, `try_result()`
+- `safe_read_gnucash()`, `safe_post_transaction()`, `safe_trial_balance()`
+
+### Error Handling - Logger Monad
+Track computation steps with audit trail logging for forecasts.
+- `logged()`, `logged_value()`, `logged_log()`
+- `audited_forecast()`, `audited_monte_carlo()`, `write_forecast_audit()`
+
+### Data Import - OFX/QFX
+Import bank statements with Rcpp-accelerated parsing and validation.
+- `import_ofx()`, `parse_ofx_cpp()`, `detect_ofx_version()`
+- `import_ofx_to_gnucash()`, `validate_ofx_import()`
+
+### Data Import - CSV
+Import from PayPal, Stripe, and QuickBooks with duplicate detection.
+- `import_paypal_csv()`, `import_stripe_csv()`, `import_quickbooks_csv()`
+- `combine_csv_imports()`, `preview_csv_mapping()`
+
+### Rcpp Utilities
+High-performance C++ for fraction arithmetic, GUID handling, and validation.
+- `fraction_to_double()`, `double_to_fraction()`, `add_fractions()`
+- `generate_guid()`, `validate_guid()`, `check_guid_uniqueness()`
+- `validate_transaction_balance()`, `calculate_running_balance()`
+
+### Budgets & Scheduled Transactions
+Budget creation/comparison and recurring transaction management.
+- `Budget`, `budget_from_df()`, `annual_budget()`, `monthly_budget()`
+- `ScheduledTransactionManager`, `scheduled_from_df()`
+
+### Commodities, Prices & Lots
+Track currencies, securities, historical prices, and investment lots for cost basis.
+- `Commodity`, `currency()`, `security()`
+- `PriceDB`, `new_price()`, `prices_from_df()`
+- `LotManager`, `lots_from_df()`
+
+### Shiny/Quarto Integration
+Reactive wrappers for building interactive dashboards.
+- `reactive_gnucash()`, `reactive_trial_balance()`, `reactive_forecast()`
+- `reactive_balance_sheet()`, `reactive_monte_carlo()`
 - Account templates (C-corp, small business, personal)
-- targets pipeline compatible
 
 ## Documentation
 

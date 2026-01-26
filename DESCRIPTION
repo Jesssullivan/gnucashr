@@ -2,9 +2,7 @@ Package: gnucashr
 Title: Read, Analyze, and Model GnuCash Accounting Data in R
 Version: 0.2.0
 Authors@R:
-    person("Jess", "Sullivan", , "jess@tinyland.dev", role = c("aut", "cre"))
-Author: Jess Sullivan [aut, cre]
-Maintainer: Jess Sullivan <jess@tinyland.dev>
+    person("Jess", "Sullivan", , "jess@sulliwood.org", role = c("aut", "cre", "cph"))
 Description: Read GnuCash SQLite and XML files directly into R for financial
     analysis. Provides R6 classes for accounts, transactions, and books with
     multi-book consolidation, intercompany elimination, and monadic error
