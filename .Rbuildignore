@@ -17,6 +17,8 @@
 ^coverage\.xml$
 ^test-results\.xml$
 ^cran-comments\.md$
+^CRAN-TODO\.md$
+^CRAN-SUBMISSION$
 ^\.covrignore$
 ^\.env$
 ^\.claude$
