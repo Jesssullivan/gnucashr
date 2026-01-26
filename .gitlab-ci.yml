@@ -69,14 +69,16 @@ r-cmd-check:
 # Run testthat tests
 test:
   stage: test
+  timeout: 2h
   <<: *setup
   script:
     - |
       Rscript -e '
         options(repos = c(CRAN = "https://cloud.r-project.org"))
+        devtools::install(quick = TRUE, upgrade = "never")
         library(testthat)
         library(gnucashr)
-        test_results <- test_check("gnucashr", reporter = "junit", output_file = "test-results.xml")
+        test_check("gnucashr", reporter = JunitReporter$new(file = "test-results.xml"))
       '
   artifacts:
     reports:
