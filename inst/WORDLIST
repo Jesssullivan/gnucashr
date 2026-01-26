@@ -228,3 +228,17 @@ Chargebacks
 # Package-specific
 gnucashr's
 csv
+
+# Stock tickers and examples
+AAPL
+
+# OFX additional terms
+ACCTID
+
+# Budget terms
+actuals
+
+# Technical documentation
+AddressSanitizer
+AST
+KeePassXC
