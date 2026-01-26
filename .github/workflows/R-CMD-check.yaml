@@ -13,8 +13,6 @@ jobs:
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
-    # macOS may fail due to transient CRAN mirror issues (verified via mac.r-project.org)
-    continue-on-error: ${{ matrix.config.os == 'macos-latest' }}
 
     strategy:
       fail-fast: false
@@ -40,13 +38,18 @@ jobs:
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
 
+      - name: Install macOS system dependencies
+        if: runner.os == 'macOS'
+        run: |
+          brew install harfbuzz fribidi freetype
+
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::rcmdcheck
           needs: check
-          cache-version: 2
+          cache-version: 3
         env:
-          # Retry downloads on transient failures
+          # Increase timeout and use HTTP/2 for reliability
           PKGCACHE_HTTP_VERSION: 2
           PKGCACHE_TIMEOUT: 600
 
@@ -64,6 +67,7 @@ jobs:
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
     steps:
       - uses: actions/checkout@v4
@@ -86,6 +90,13 @@ jobs:
             line_exclusions = list("src/RcppExports.cpp")
           )
         shell: Rscript {0}
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+          verbose: true
 
       - name: Show testthat output
         if: always()
