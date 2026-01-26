@@ -1,63 +1,79 @@
 # gnucashr
 
-Read and analyze GnuCash accounting data in R.
+R interface to GnuCash accounting data. Reads SQLite and XML files, provides R6 classes for accounts and transactions, supports multi-book consolidation with intercompany elimination.
 
 ## Installation
 
 ```r
-# Install from GitHub
 remotes::install_github("Jesssullivan/gnucashr")
 ```
-## Quick Start
+
+Requires R >= 4.1.0, C++17 compiler.
+
+## Usage
 
 ```r
 library(gnucashr)
 
-# Open a GnuCash SQLite file
-gc <- read_gnucash("path/to/books.gnucash")
+# Open GnuCash file (SQLite or XML)
+gc <- read_gnucash("books.gnucash")
 
-# Get trial balance
+# Trial balance
 trial_balance(gc, as_of = "2026-01-15")
 
-# Get account transactions
-account_transactions(gc,
-                     account = "Assets:Bank:Checking",
-                     start = "2025-01-01",
-                     end = "2025-12-31")
+# Financial statements
+balance_sheet(gc, as_of = "2026-01-15")
+income_statement(gc, start = "2026-01-01", end = "2026-01-31")
 
-# Close when done
+# Account transactions
+account_transactions(gc, "Assets:Bank:Checking",
+                     start = "2025-01-01", end = "2025-12-31")
+
 close(gc)
 ```
 
 ## Features
 
-- **Read-only access** to GnuCash SQLite files
-- **Lazy evaluation** with dbplyr for efficient queries
-- **Tidy data** - all outputs are tibbles
-- **Account navigation** with path-based access (`Assets:Bank:Checking`)
-- **Multi-entity support** for consolidated reporting
+### Core (v0.2.0)
+- SQLite and XML file support via `GnuCashDB` R6 class
+- Account tree navigation with path-based access
+- Trial balance, balance sheet, income statement
+- Transaction queries with date filtering
+- Commodity and price database access
+- Budget and scheduled transaction support
+- Lot tracking for cost basis
 
-## Roadmap
+### Multi-Entity
+- `BookCollection` for consolidated reporting
+- Intercompany transaction elimination
+- Per-entity and consolidated views
 
-See `docs/gnucashr-architecture.md` for the full design document.
+### Forecasting
+- Lazy evaluation via `LazyForecast` class
+- Monte Carlo simulation (Rcpp-accelerated)
+- Sensitivity analysis
+- Scenario comparison
 
-### Phase 1: Core Read-Only (Current)
-- [ ] SQLite connection with RSQLite
-- [ ] Basic table accessors
-- [ ] `read_gnucash()` function
-- [ ] `trial_balance()` with date filtering
-- [ ] `account_transactions()` function
+### Write Operations
+- Create accounts and transactions
+- Automatic backup before writes
+- GUID generation and validation
 
-### Phase 2: Reporting Functions
-- [ ] `income_statement()`
-- [ ] `balance_sheet()`
-- [ ] `account_tree()` navigation
-- [ ] `validate_gnucash()` checks
+### Error Handling
+- `Result` type (Ok/Err) for explicit error handling
+- `Logged` type for audit trails
+- Safe wrappers for all operations
 
-### Phase 3: Multi-Entity
-- [ ] Entity filtering and consolidation
-- [ ] Intercompany elimination
-- [ ] targets integration vignette
+### Integration
+- Quarto reactive widgets for dashboards
+- Account templates (C-corp, small business, personal)
+- targets pipeline compatible
+
+## Vignettes
+
+- `getting-started`: Basic usage and concepts
+- `forecasting`: Monte Carlo and scenario analysis
+- `consolidation`: Multi-book reporting
 
 ## License
 
