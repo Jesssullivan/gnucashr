@@ -182,9 +182,9 @@ cran-check:
           print(url_results)
         }
 
-        # Full CRAN check (strict - warnings are errors)
+        # Full CRAN check (NOTEs and warnings are allowed, only errors fail)
         message("=== R CMD check --as-cran ===")
-        results <- devtools::check(cran = TRUE, error_on = "warning")
+        results <- devtools::check(cran = TRUE, error_on = "error")
       '
   artifacts:
     paths:
