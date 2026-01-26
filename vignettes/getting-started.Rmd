@@ -25,7 +25,7 @@ files and performing common financial analyses.
 ```{r install}
 # From GitHub (development version)
 # install.packages("devtools")
-devtools::install_github("tinyland/gnucashr")
+devtools::install_github("Jesssullivan/gnucashr")
 ```
 
 ## Connecting to a GnuCash File
@@ -74,10 +74,9 @@ checking_txns <- account_transactions(gc, "Assets:Current:Checking")
 # Filter by date range
 recent <- account_transactions(
   gc,
-
   "Assets:Current:Checking",
-  start_date = as.Date("2024-01-01"),
-  end_date = as.Date("2024-12-31")
+  start = as.Date("2024-01-01"),
+  end = as.Date("2024-12-31")
 )
 
 # Calculate running balance

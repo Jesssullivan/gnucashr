@@ -1,7 +1,7 @@
 # gnucashr
 
 [![R-CMD-check](https://github.com/Jesssullivan/gnucashr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Jesssullivan/gnucashr/actions/workflows/R-CMD-check.yaml)
-[![GitLab CI](https://gitlab.com/tinyland/oss/gnucashr/badges/main/pipeline.svg)](https://gitlab.com/tinyland/oss/gnucashr/-/pipelines)
+[![GitLab CI](https://gitlab.com/tinyland/projects/gnucashr/badges/main/pipeline.svg)](https://gitlab.com/tinyland/projects/gnucashr/-/pipelines)
 [![codecov](https://codecov.io/gh/Jesssullivan/gnucashr/branch/main/graph/badge.svg)](https://codecov.io/gh/Jesssullivan/gnucashr)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -24,11 +24,11 @@ library(gnucashr)
 gc <- read_gnucash("books.gnucash")
 
 # Trial balance
-trial_balance(gc, as_of = "2026-01-15")
+tb <- trial_balance(gc, as_of = "2026-01-15")
 
-# Financial statements
-balance_sheet(gc, as_of = "2026-01-15")
-income_statement(gc, start = "2026-01-01", end = "2026-01-31")
+# Financial statements (take trial balance as input)
+balance_sheet(tb)
+income_statement(tb)
 
 # Account transactions
 account_transactions(gc, "Assets:Bank:Checking",
