@@ -1,14 +1,23 @@
-url: https://Jesssullivan.github.io/gnucashr/
+url: https://tinyland.gitlab.io/projects/gnucashr
+
 template:
   bootstrap: 5
-  bootswatch: flatly
+  light-switch: true
   bslib:
     primary: "#2C3E50"
     navbar-bg: "#2C3E50"
+    base_font: {google: "Source Sans Pro"}
+    heading_font: {google: "Source Sans Pro"}
+    code_font: {google: "Fira Code"}
 
 home:
   title: gnucashr
   description: Read, Analyze, and Model GnuCash Accounting Data in R
+  links:
+    - text: Report a bug
+      href: https://gitlab.com/tinyland/projects/gnucashr/-/issues
+    - text: Request a feature
+      href: https://gitlab.com/tinyland/projects/gnucashr/-/issues/new
 
 navbar:
   structure:
@@ -16,10 +25,11 @@ navbar:
       - intro
       - reference
       - articles
-      - tutorials
       - news
     right:
       - search
+      - lightswitch
+      - gitlab
       - github
   components:
     intro:
@@ -35,16 +45,22 @@ navbar:
           href: articles/consolidation.html
         - text: Financial Forecasting
           href: articles/forecasting.html
+        - text: Importing Data
+          href: articles/importing-data.html
         - text: "---"
         - text: "Technical Articles"
         - text: Performance Benchmarks
           href: articles/performance-benchmarks.html
         - text: Rcpp Internals
           href: articles/rcpp-internals.html
+    gitlab:
+      icon: fab fa-gitlab fa-lg
+      href: https://gitlab.com/tinyland/projects/gnucashr
+      aria-label: GitLab (Primary)
     github:
       icon: fab fa-github fa-lg
       href: https://github.com/Jesssullivan/gnucashr
-      aria-label: GitHub
+      aria-label: GitHub (Mirror)
 
 reference:
   - title: "Reading GnuCash Files"
@@ -313,8 +329,27 @@ reference:
     contents:
       - starts_with("reactive_")
 
-  - title: "Data Import"
-    desc: "Import from external formats (OFX, CSV)"
+  - title: "Data Import - OFX/QFX"
+    desc: "Import bank statements in OFX format"
+    contents:
+      - import_ofx
+      - detect_ofx_version
+      - validate_ofx_import
+      - import_ofx_to_gnucash
+      - parse_ofx_cpp
+
+  - title: "Data Import - CSV"
+    desc: "Import from PayPal, Stripe, QuickBooks CSV exports"
+    contents:
+      - import_paypal_csv
+      - import_stripe_csv
+      - import_quickbooks_csv
+      - combine_csv_imports
+      - preview_csv_mapping
+      - is_csv_import
+
+  - title: "Database Creation"
+    desc: "Create new GnuCash databases"
     contents:
       - create_gnucash
 
@@ -325,6 +360,7 @@ articles:
       - getting-started
       - consolidation
       - forecasting
+      - importing-data
 
   - title: Technical Articles
     navbar: ~

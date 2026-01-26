@@ -53,5 +53,7 @@ Suggests:
     shiny
 VignetteBuilder: knitr
 Config/testthat/edition: 3
-URL: https://github.com/Jesssullivan/gnucashr
-BugReports: https://github.com/Jesssullivan/gnucashr/issues
+URL: https://tinyland.gitlab.io/projects/gnucashr,
+    https://gitlab.com/tinyland/projects/gnucashr,
+    https://github.com/Jesssullivan/gnucashr
+BugReports: https://gitlab.com/tinyland/projects/gnucashr/-/issues
