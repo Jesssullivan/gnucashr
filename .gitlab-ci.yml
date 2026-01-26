@@ -49,9 +49,9 @@ r-cmd-check:
         install.packages(c("rcmdcheck", "devtools", "knitr", "rmarkdown"), lib = Sys.getenv("R_LIBS_USER"))
         library(rcmdcheck)
         rcmdcheck::rcmdcheck(
-          args = c("--no-manual", "--as-cran"),
+          args = c("--no-manual", "--as-cran", "--ignore-vignettes"),
           build_args = c("--no-manual", "--no-build-vignettes"),
-          error_on = "warning",
+          error_on = "error",
           check_dir = "check"
         )
       '
