@@ -135,7 +135,7 @@ test_that("fraction addition has identity: a + 0 == a", {
       result <- add_fractions(num, denom, 0L, 1L)
 
       val_original <- num / denom
-      val_result <- result[1, "numerator"] / result[1, "denominator"]
+      val_result <- unname(result[1, "numerator"]) / unname(result[1, "denominator"])
 
       expect_equal(val_original, val_result, tolerance = 1e-10)
     }
@@ -160,7 +160,7 @@ test_that("fraction addition inverse: a + (-a) == 0", {
       result <- add_fractions(num, denom, neg_num, denom)
 
       # Should equal zero
-      val_result <- result[1, "numerator"] / result[1, "denominator"]
+      val_result <- unname(result[1, "numerator"]) / unname(result[1, "denominator"])
       expect_equal(val_result, 0, tolerance = 1e-10)
     }
   )

@@ -2,7 +2,8 @@
 #' @importFrom Rcpp evalCpp
 #' @importFrom RcppParallel RcppParallelLibs
 #' @importFrom utils head tail
-#' @importFrom stats median
+#' @importFrom stats median na.omit
+#' @importFrom dplyr if_else
 #' @importFrom R6 R6Class
 #' @importFrom RSQLite SQLite SQLITE_RO SQLITE_RW
 NULL
@@ -125,5 +126,10 @@ utils::globalVariables(c(
   "memo",
   "category",
   "fee",
-  "status"
+  "status",
+
+  # OFX import operations
+  "transaction_type",
+  "is_duplicate",
+  "imported_tx_guid"
 ))
