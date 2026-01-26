@@ -1,8 +1,43 @@
 # gnucashr (development version)
 
+## New Features
+
+### Data Import
+* Add OFX/QFX bank statement import with Rcpp-accelerated parsing
+* Add PayPal CSV import with automatic format detection and fee extraction
+* Add Stripe CSV import with cents-to-dollars conversion
+* Add QuickBooks CSV import supporting QBO and Desktop formats
+* Add `combine_csv_imports()` for merging multiple import sources
+* Add `validate_ofx_import()` for duplicate detection
+* Add `preview_csv_mapping()` debug helper
+
+### CI/CD Infrastructure
+* Add GitLab CI pipeline (primary) with R CMD check, coverage, pkgdown Pages
+* Add GitHub Actions (secondary) with multi-platform matrix
+* Add codecov integration with 80% coverage target
+
+### Testing Framework
+* Add property-based testing with hedgehog for fraction arithmetic
+* Add PBT tests for GUID generation, Monte Carlo reproducibility
+* Add test fixtures for SQLite databases
+* Add KeePassXC-style credential providers for integration tests
+
+### Documentation
+* Add pkgdown site with dark mode support
+* Add `importing-data` vignette for CSV/OFX workflows
+* Add `performance-benchmarks` technical article
+* Add `rcpp-internals` contributor documentation
+* Add CONTRIBUTING.md, SECURITY.md, REPOSITORY_SETUP.md
+
+## Bug Fixes
+
+* Fix `account_transactions()` parameter documentation
+
+---
+
 # gnucashr 0.3.0 (planned)
 
-## New Features
+## Planned Features
 
 ### Performance Improvements
 * Add data.table backend option for large books
@@ -18,15 +53,6 @@
 * Add targets pipeline integration vignette
 * Add Plumber API template for serving reports
 * Add Shiny module library for dashboard components
-
-### Data Validation
-* Add comprehensive data integrity checks
-* Add account hierarchy validation
-* Add split balance verification for imported data
-
-## Bug Fixes
-
-* TBD based on user feedback
 
 ---
 

@@ -28,7 +28,7 @@
 ── R CMD check results ─────────────────────── gnucashr 0.2.0 ────
 Duration: ~2-3 minutes
 
-0 errors ✓ | 0 warnings ✓ | 0 notes ✓
+0 errors | 0 warnings | 0 notes
 ```
 
 ### Expected CRAN Notes
@@ -126,8 +126,9 @@ This is a new submission.
 
 ## Maintainer Notes
 
-- The package is actively maintained at https://github.com/Jesssullivan/gnucashr
-- Issues can be reported at https://github.com/Jesssullivan/gnucashr/issues
+- The package is actively maintained at https://gitlab.com/tinyland/projects/gnucashr
+- Issues can be reported at https://gitlab.com/tinyland/projects/gnucashr/-/issues
+- GitHub mirror: https://github.com/Jesssullivan/gnucashr
 - The package includes comprehensive test coverage (see tests/testthat/)
 - Vignettes are provided for common use cases
 

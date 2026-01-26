@@ -10,7 +10,11 @@ R interface to GnuCash accounting data. Reads SQLite and XML files, provides R6 
 ## Installation
 
 ```r
+# From GitHub
 remotes::install_github("Jesssullivan/gnucashr")
+
+# From GitLab (primary repository)
+remotes::install_gitlab("tinyland/projects/gnucashr")
 ```
 
 Requires R >= 4.1.0, C++17 compiler.
@@ -69,16 +73,29 @@ close(gc)
 - `Logged` type for audit trails
 - Safe wrappers for all operations
 
+### Data Import
+- OFX/QFX bank statement import (Rcpp-accelerated parsing)
+- PayPal CSV import with fee extraction
+- Stripe CSV import with payout matching
+- QuickBooks CSV import (QBO/Desktop formats)
+- Duplicate detection and validation
+
 ### Integration
 - Quarto reactive widgets for dashboards
 - Account templates (C-corp, small business, personal)
 - targets pipeline compatible
 
-## Vignettes
+## Documentation
 
+### Vignettes
 - `getting-started`: Basic usage and concepts
 - `forecasting`: Monte Carlo and scenario analysis
 - `consolidation`: Multi-book reporting
+- `importing-data`: OFX and CSV import workflows
+
+### Technical Articles
+- `performance-benchmarks`: Rcpp acceleration benchmarks
+- `rcpp-internals`: C++ implementation details
 
 ## Contributing
 
