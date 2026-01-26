@@ -75,10 +75,13 @@ test:
     - |
       Rscript -e '
         options(repos = c(CRAN = "https://cloud.r-project.org"))
-        devtools::install(quick = TRUE, upgrade = "never")
-        library(testthat)
-        library(gnucashr)
-        test_check("gnucashr", reporter = JunitReporter$new(file = "test-results.xml"))
+        library(devtools)
+        # Run tests from source directory with JUnit output
+        results <- devtools::test(reporter = testthat::JunitReporter$new(file = "test-results.xml"))
+        # Check for failures
+        if (any(as.data.frame(results)$failed > 0)) {
+          quit(status = 1)
+        }
       '
   artifacts:
     reports:
