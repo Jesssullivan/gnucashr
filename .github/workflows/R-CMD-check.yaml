@@ -42,6 +42,11 @@ jobs:
         with:
           extra-packages: any::rcmdcheck
           needs: check
+          cache-version: 2
+        env:
+          # Retry downloads on transient failures
+          PKGCACHE_HTTP_VERSION: 2
+          PKGCACHE_TIMEOUT: 600
 
       - uses: r-lib/actions/check-r-package@v2
         with:
