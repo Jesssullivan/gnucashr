@@ -1,21 +1,26 @@
 # GitLab CI/CD Pipeline for gnucashr R Package
 # Primary CI pipeline - GitLab CI
-# Secondary CI pipeline - GitHub Actions
+# Optimized for speed with pak and Posit Package Manager
 
 image: rocker/tidyverse:4.4.0
 
 variables:
   R_LIBS_USER: "$CI_PROJECT_DIR/ci/lib"
+  # Use Posit Package Manager for fast binary installs
+  RSPM: "https://packagemanager.posit.co/cran/__linux__/jammy/latest"
   _R_CHECK_CRAN_INCOMING_REMOTE_: "false"
   _R_CHECK_FORCE_SUGGESTS_: "false"
-  R_CHECK_ARGS: "--no-manual --as-cran"
-  MAKEFLAGS: "-j2"
+  MAKEFLAGS: "-j4"
+  # pak settings for faster installs
+  PKG_SYSREQS: "true"
+  PKG_SYSREQS_DRY_RUN: "false"
 
 cache:
-  key: "${CI_COMMIT_REF_SLUG}"
+  key: "r-deps-v2-${CI_COMMIT_REF_SLUG}"
   paths:
     - $R_LIBS_USER
     - src/*.o
+  policy: pull-push
 
 stages:
   - check
@@ -23,32 +28,32 @@ stages:
   - coverage
   - deploy
 
-# Install system dependencies and R packages
+# Optimized setup with pak
 .setup: &setup
   before_script:
     - mkdir -p $R_LIBS_USER
     # System dependencies for Rcpp/RcppParallel/RcppArmadillo
     - apt-get update -qq && apt-get install -y -qq libcurl4-openssl-dev libssl-dev libxml2-dev libgit2-dev libblas-dev liblapack-dev
-    # Install R dependencies
+    # Install pak for fast dependency resolution
     - |
       Rscript -e '
-        options(repos = c(CRAN = "https://cloud.r-project.org"))
-        install.packages(c("remotes", "knitr", "rmarkdown"), lib = Sys.getenv("R_LIBS_USER"))
-        library(remotes)
-        remotes::install_deps(dependencies = TRUE, upgrade = "always")
+        options(repos = c(RSPM = Sys.getenv("RSPM"), CRAN = "https://cloud.r-project.org"))
+        if (!requireNamespace("pak", quietly = TRUE)) {
+          install.packages("pak", repos = sprintf("https://r-lib.github.io/p/pak/stable/%s/%s/%s", .Platform$pkgType, R.Version()$os, R.Version()$arch))
+        }
+        pak::pkg_install("local::.", dependencies = TRUE, upgrade = FALSE)
       '
 
 # R CMD check - the main package validation
 r-cmd-check:
   stage: check
-  timeout: 2h
+  timeout: 45m
   <<: *setup
   script:
     - |
       Rscript -e '
-        options(repos = c(CRAN = "https://cloud.r-project.org"))
-        install.packages(c("rcmdcheck", "devtools", "knitr", "rmarkdown"), lib = Sys.getenv("R_LIBS_USER"))
-        library(rcmdcheck)
+        options(repos = c(RSPM = Sys.getenv("RSPM"), CRAN = "https://cloud.r-project.org"))
+        pak::pkg_install("rcmdcheck")
         rcmdcheck::rcmdcheck(
           args = c("--no-manual", "--as-cran", "--ignore-vignettes"),
           build_args = c("--no-manual", "--no-build-vignettes"),
@@ -66,18 +71,21 @@ r-cmd-check:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     - if: $CI_COMMIT_TAG
 
-# Run testthat tests
+# Run testthat tests (can run in parallel with r-cmd-check via DAG)
 test:
   stage: test
-  timeout: 2h
+  timeout: 30m
+  needs:
+    - job: r-cmd-check
+      optional: true
   <<: *setup
   script:
     - |
       Rscript -e '
-        options(repos = c(CRAN = "https://cloud.r-project.org"))
-        library(devtools)
+        options(repos = c(RSPM = Sys.getenv("RSPM"), CRAN = "https://cloud.r-project.org"))
+        pak::pkg_install("testthat")
         # Run tests from source directory with JUnit output
-        results <- devtools::test(reporter = testthat::JunitReporter$new(file = "test-results.xml"))
+        results <- testthat::test_local(reporter = testthat::JunitReporter$new(file = "test-results.xml"))
         # Check for failures
         if (any(as.data.frame(results)$failed > 0)) {
           quit(status = 1)
@@ -95,30 +103,31 @@ test:
 # Code coverage with covr
 coverage:
   stage: coverage
+  timeout: 30m
+  needs:
+    - job: test
   <<: *setup
   script:
     - |
       Rscript -e '
-        options(repos = c(CRAN = "https://cloud.r-project.org"))
-        install.packages("covr", lib = Sys.getenv("R_LIBS_USER"))
-        library(covr)
+        options(repos = c(RSPM = Sys.getenv("RSPM"), CRAN = "https://cloud.r-project.org"))
+        pak::pkg_install("covr")
 
-        cov <- package_coverage(
+        cov <- covr::package_coverage(
           type = "tests",
           line_exclusions = list("src/RcppExports.cpp")
         )
 
         # Generate coverage report
-        report <- coverage_to_list(cov)
-        total_coverage <- attr(cov, "package")$filecoverage
-        message(sprintf("Total coverage: %.1f%%", mean(total_coverage) * 100))
+        total_coverage <- covr::percent_coverage(cov)
+        message(sprintf("Total coverage: %.1f%%", total_coverage))
 
         # Save coverage report as cobertura XML for GitLab
-        to_cobertura(cov, filename = "coverage.xml")
+        covr::to_cobertura(cov, filename = "coverage.xml")
 
         # Upload to Codecov if token is available
         if (Sys.getenv("CODECOV_TOKEN") != "") {
-          codecov(token = Sys.getenv("CODECOV_TOKEN"))
+          covr::codecov(token = Sys.getenv("CODECOV_TOKEN"))
         }
       '
   coverage: '/Total coverage: (\d+\.\d+)%/'
@@ -135,15 +144,15 @@ coverage:
 # Build pkgdown documentation site
 pages:
   stage: deploy
+  timeout: 20m
+  needs:
+    - job: r-cmd-check
   <<: *setup
   script:
     - |
       Rscript -e '
-        options(repos = c(CRAN = "https://cloud.r-project.org"))
-        install.packages(c("pkgdown", "devtools"), lib = Sys.getenv("R_LIBS_USER"))
-        library(pkgdown)
-
-        # Build documentation site
+        options(repos = c(RSPM = Sys.getenv("RSPM"), CRAN = "https://cloud.r-project.org"))
+        pak::pkg_install("pkgdown")
         pkgdown::build_site(override = list(destination = "public"))
       '
   artifacts:
@@ -159,13 +168,13 @@ pages:
 # CRAN-ready check (stricter, for releases)
 cran-check:
   stage: check
-  timeout: 2h
+  timeout: 1h
   <<: *setup
   script:
     - |
       Rscript -e '
-        options(repos = c(CRAN = "https://cloud.r-project.org"))
-        install.packages(c("spelling", "urlchecker", "goodpractice"), lib = Sys.getenv("R_LIBS_USER"))
+        options(repos = c(RSPM = Sys.getenv("RSPM"), CRAN = "https://cloud.r-project.org"))
+        pak::pkg_install(c("spelling", "urlchecker", "devtools"))
 
         # Spelling check
         message("=== Spelling Check ===")
@@ -200,11 +209,15 @@ cran-check:
 # Build source package for release
 build-package:
   stage: deploy
+  timeout: 15m
+  needs:
+    - job: r-cmd-check
   <<: *setup
   script:
     - |
       Rscript -e '
-        options(repos = c(CRAN = "https://cloud.r-project.org"))
+        options(repos = c(RSPM = Sys.getenv("RSPM"), CRAN = "https://cloud.r-project.org"))
+        pak::pkg_install("devtools")
         pkg <- devtools::build()
         # Get version from DESCRIPTION
         desc <- read.dcf("DESCRIPTION")
