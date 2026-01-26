@@ -380,6 +380,8 @@ reference:
       - print_ofx_summary
       - write-backup
       - write-transaction
+      - reports
+      - write-account
 
 articles:
   - title: User Guides
