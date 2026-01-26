@@ -47,17 +47,23 @@ jobs:
         run: |
           brew install harfbuzz fribidi freetype
 
+      - name: Pre-install problematic packages from source (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          # bslib binary download from CRAN mirrors is failing
+          # Pre-install from source to avoid pak lockfile issues
+          Rscript -e 'install.packages("bslib", type = "source", repos = "https://cloud.r-project.org")'
+        shell: bash
+
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::rcmdcheck
           needs: check
-          cache-version: 4
+          cache-version: 5
         env:
           # Increase timeout and use HTTP/2 for reliability
           PKGCACHE_HTTP_VERSION: 2
           PKGCACHE_TIMEOUT: 600
-          # Force source packages on macOS to avoid binary download failures
-          PKG_PLATFORM: ${{ runner.os == 'macOS' && 'source' || '' }}
 
       - uses: r-lib/actions/check-r-package@v2
         with:
