@@ -74,7 +74,7 @@ stages:
 # GitLab check is streamlined for faster feedback
 r-cmd-check:
   stage: check
-  timeout: 45m
+  timeout: 60m
   <<: *setup
   script:
     - |
