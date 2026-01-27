@@ -51,6 +51,19 @@ fixture_exists <- function(...) {
 # Database Fixture Loaders
 # =============================================================================
 
+#' Load Fixture Database (Alias)
+#'
+#' Alias for load_test_db for consistency with fixture_path naming.
+#'
+#' @param name Name of the database fixture
+#' @param ... Additional arguments passed to load_test_db
+#' @return A GnuCashDB object, or NULL if fixture not found
+#' @seealso \code{\link{load_test_db}}
+fixture_db <- function(name, ...) {
+  load_test_db(name, ...)
+}
+
+
 #' Load Test Database Fixture
 #'
 #' Loads a GnuCash database fixture for testing. Creates a temporary copy

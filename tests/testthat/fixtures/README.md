@@ -59,6 +59,12 @@ Use this fixture when you need a realistic account structure for testing.
 # Load a fixture database
 gc <- load_test_db("minimal.gnucash")
 
+# Or use the fixture_db alias (consistent with fixture_path)
+gc <- fixture_db("minimal.gnucash")
+
+# Get path to fixture file without loading
+path <- fixture_path("databases", "minimal.gnucash")
+
 # Or with automatic cleanup
 test_that("example test", {
   gc <- load_test_db_scoped("with-accounts.gnucash")
@@ -71,6 +77,15 @@ test_that("requires specific fixture", {
   skip_if_no_db_fixture("with-accounts.gnucash")
   # ... test code
 })
+
+# Check fixture validity
+validation <- validate_db_fixture("minimal.gnucash")
+if (validation$valid) {
+  message("Fixture has ", validation$n_accounts, " accounts")
+}
+
+# List available fixtures
+available <- list_db_fixtures()
 ```
 
 ## Regenerating Fixtures
@@ -162,8 +177,35 @@ Fixture GUIDs follow a naming convention:
 - `t1...` - Transaction GUIDs
 - `s1...` - Split GUIDs
 
+## Helper Functions Reference
+
+### Path Helpers (helper-fixtures.R)
+
+| Function | Purpose |
+|----------|---------|
+| `fixture_path(...)` | Get path to any fixture file |
+| `fixture_exists(...)` | Check if fixture file exists |
+| `fixture_db(name)` | Load database fixture (alias for load_test_db) |
+
+### Database Loaders (helper-fixtures.R)
+
+| Function | Purpose |
+|----------|---------|
+| `load_test_db(name)` | Load fixture with optional copy |
+| `load_test_db_scoped(name)` | Load with automatic cleanup via withr |
+| `validate_db_fixture(name)` | Check fixture integrity |
+| `list_db_fixtures()` | List available database fixtures |
+
+### Skip Helpers (helper-fixtures.R)
+
+| Function | Purpose |
+|----------|---------|
+| `skip_if_no_fixture(...)` | Skip if any fixture missing |
+| `skip_if_no_db_fixture(name)` | Skip if database fixture missing |
+
 ## Notes
 
 - Fixture files should be treated as immutable in version control
 - Tests should copy fixtures to temp directories before modifying
 - Use `load_test_db()` with `copy = TRUE` (default) for safe testing
+- The `load_test_db_scoped()` function uses withr for automatic cleanup
