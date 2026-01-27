@@ -1,7 +1,9 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://tinyland.gitlab.io/projects/gnucashr/404.html</loc></url>
+<url><loc>https://tinyland.gitlab.io/projects/gnucashr/CONTRIBUTING.html</loc></url>
 <url><loc>https://tinyland.gitlab.io/projects/gnucashr/LICENSE-text.html</loc></url>
 <url><loc>https://tinyland.gitlab.io/projects/gnucashr/PULL_REQUEST_TEMPLATE.html</loc></url>
+<url><loc>https://tinyland.gitlab.io/projects/gnucashr/SECURITY.html</loc></url>
 <url><loc>https://tinyland.gitlab.io/projects/gnucashr/articles/consolidation.html</loc></url>
 <url><loc>https://tinyland.gitlab.io/projects/gnucashr/articles/forecasting.html</loc></url>
 <url><loc>https://tinyland.gitlab.io/projects/gnucashr/articles/getting-started.html</loc></url>
