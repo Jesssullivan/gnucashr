@@ -1,7 +1,6 @@
 # gnucashr
 
 [![R-CMD-check](https://github.com/Jesssullivan/gnucashr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Jesssullivan/gnucashr/actions/workflows/R-CMD-check.yaml)
-[![GitLab CI](https://gitlab.com/tinyland/projects/gnucashr/badges/main/pipeline.svg)](https://gitlab.com/tinyland/projects/gnucashr/-/pipelines)
 [![codecov](https://app.codecov.io/gh/Jesssullivan/gnucashr/branch/main/graph/badge.svg)](https://app.codecov.io/gh/Jesssullivan/gnucashr)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -132,21 +131,7 @@ Reactive wrappers for building interactive dashboards.
 - `performance-benchmarks`: Rcpp acceleration benchmarks
 - `rcpp-internals`: C++ implementation details
 
-## Contributing
 
-Contributions are welcome! Please see our [Contributing Guide](https://gitlab.com/tinyland/projects/gnucashr/-/blob/main/docs/CONTRIBUTING.md) for details on:
+--- 
 
-- Development workflow
-- Code style guidelines
-- Testing requirements
-- Pull request process
-
-For repository setup and mirroring information, see [Repository Setup](https://gitlab.com/tinyland/projects/gnucashr/-/blob/main/docs/REPOSITORY_SETUP.md).
-
-## Security
-
-For security concerns, please review our [Security Policy](https://gitlab.com/tinyland/projects/gnucashr/-/blob/main/docs/SECURITY.md). Do not report security vulnerabilities through public issues.
-
-## License
-
-MIT
+This repo is a downstream artifact from Tinyland.dev, Inc & xoxd.ai.  
