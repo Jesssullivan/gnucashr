@@ -4,8 +4,11 @@
 
 image: rocker/tidyverse:4.4.0
 
-# Note: Untagged jobs run on small Linux x86-64 by default on GitLab.com
-# Medium/large runners require Premium tier
+# Target x86_64 Docker runners - rocker images don't have ARM64 builds
+default:
+  tags:
+    - x86_64
+    - docker
 
 variables:
   R_LIBS_USER: "$CI_PROJECT_DIR/ci/lib"
@@ -41,6 +44,9 @@ stages:
 # Nix-based build template for reproducible environments
 .nix_base:
   image: nixos/nix:latest
+  tags:
+    - x86_64
+    - docker
   variables:
     NIX_CONFIG: |
       experimental-features = nix-command flakes
