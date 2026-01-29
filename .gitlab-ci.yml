@@ -109,7 +109,6 @@ bazel:cpp:
       - ~/.cache/bazel
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-      when: manual
   allow_failure: true
 
 # ============================================================
