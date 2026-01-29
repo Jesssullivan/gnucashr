@@ -42,23 +42,28 @@ stages:
   - deploy
 
 # Nix-based build template for reproducible environments
+# See: https://discourse.nixos.org/t/trusted-substituters-in-nix-2-4/19272
 .nix_base:
   image: nixos/nix:latest
   tags:
     - linux
     - docker
   variables:
+    # Basic Nix config - substituters configured in before_script for trust
     NIX_CONFIG: |
       experimental-features = nix-command flakes
       accept-flake-config = true
-      extra-substituters = https://nix-cache.fuzzy-dev.tinyland.dev/main
-      extra-trusted-public-keys = main:PBDvqG8OP3W2XF4QzuqWwZD/RhLRsE7ONxwM09kqTtw=
   before_script:
     - nix --version
-    # Attic cache configured via NIX_CONFIG above (uses flake.nix nixConfig)
-    # For push access, set ATTIC_TOKEN in GitLab CI variables:
-    # - nix profile install nixpkgs#attic-client
-    # - attic login tinyland https://nix-cache.fuzzy-dev.tinyland.dev $ATTIC_TOKEN
+    # Configure Attic cache as trusted substituter in /etc/nix/nix.conf
+    # NIX_CONFIG extra-substituters doesn't work without trusted-users
+    # Appending to system nix.conf ensures the daemon trusts our cache
+    - |
+      echo "Configuring Attic cache as trusted substituter..."
+      echo "extra-substituters = https://nix-cache.fuzzy-dev.tinyland.dev/main" >> /etc/nix/nix.conf
+      echo "extra-trusted-public-keys = main:PBDvqG8OP3W2XF4QzuqWwZD/RhLRsE7ONxwM09kqTtw=" >> /etc/nix/nix.conf
+      echo "Configured substituters:"
+      grep -E "(substituters|public-keys)" /etc/nix/nix.conf || true
 
 # ============================================================
 # Nix-based Jobs (Reproducible, Cached)
