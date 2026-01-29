@@ -4,6 +4,11 @@
 
 image: rocker/tidyverse:4.4.0
 
+# Force x86_64 runners - rocker images don't support ARM64
+default:
+  tags:
+    - saas-linux-medium-amd64
+
 variables:
   R_LIBS_USER: "$CI_PROJECT_DIR/ci/lib"
   # Use Posit Package Manager for fast binary installs
@@ -38,16 +43,20 @@ stages:
 # Nix-based build template for reproducible environments
 .nix_base:
   image: nixos/nix:latest
+  tags:
+    - saas-linux-medium-amd64
   variables:
     NIX_CONFIG: |
       experimental-features = nix-command flakes
       accept-flake-config = true
+      extra-substituters = https://nix-cache.fuzzy-dev.tinyland.dev/main
+      extra-trusted-public-keys = main:PBDvqG8OP3W2XF4QzuqWwZD/RhLRsE7ONxwM09kqTtw=
   before_script:
     - nix --version
-    # Attic cache setup (uncomment when ATTIC_TOKEN is available)
+    # Attic cache configured via NIX_CONFIG above (uses flake.nix nixConfig)
+    # For push access, set ATTIC_TOKEN in GitLab CI variables:
     # - nix profile install nixpkgs#attic-client
-    # - attic login tinyland https://attic.tinyland.dev $ATTIC_TOKEN
-    # - attic use tinyland
+    # - attic login tinyland https://nix-cache.fuzzy-dev.tinyland.dev $ATTIC_TOKEN
 
 # Optimized setup with pak - skip install if dependencies cached
 .setup: &setup

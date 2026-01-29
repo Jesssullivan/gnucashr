@@ -6,11 +6,10 @@
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  # Uncomment when attic cache public key is available:
-  # nixConfig = {
-  #   extra-substituters = [ "https://nix-cache.fuzzy-dev.tinyland.dev/main" ];
-  #   extra-trusted-public-keys = [ "main:REPLACE_WITH_PUBLIC_KEY" ];
-  # };
+  nixConfig = {
+    extra-substituters = [ "https://nix-cache.fuzzy-dev.tinyland.dev/main" ];
+    extra-trusted-public-keys = [ "main:PBDvqG8OP3W2XF4QzuqWwZD/RhLRsE7ONxwM09kqTtw=" ];
+  };
 
   outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
