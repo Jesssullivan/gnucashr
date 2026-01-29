@@ -158,10 +158,7 @@ bazel:cpp-cache:
     paths:
       - ~/.cache/bazel
   rules:
-    # Manual trigger on main branch (experimental)
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-      when: manual
-      allow_failure: true
   allow_failure: true
 
 # Optimized setup with pak - skip install if dependencies cached
@@ -228,13 +225,8 @@ r-cmd-check:
     expire_in: 1 week
     when: always
   rules:
-    # Run on tags for release validation
     - if: $CI_COMMIT_TAG
-    # Optional on MRs (nix:check is primary)
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-      when: manual
-      allow_failure: true
-    # Run on main for compatibility testing
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 # Code coverage with covr
@@ -346,8 +338,6 @@ cran-check:
   rules:
     - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+/
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-      when: manual
-      allow_failure: true
 
 # Create GitLab release
 release:
