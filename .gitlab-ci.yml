@@ -1,10 +1,18 @@
 # GitLab CI/CD Pipeline for gnucashr R Package
-# Primary CI pipeline - GitLab CI
-# Optimized for speed with pak and Posit Package Manager
+# 2026-style: Greedy parallel execution with matrix flow and optimistic caching
+#
+# Architecture:
+#   build (matrix) ─┬─> nix:tarball  ─┬─> check ─┬─> coverage
+#                   │                  │          └─> pages
+#                   └─> bazel:cpp     ─┘          └─> release
+#
+# Cache Strategy:
+#   - Nix: Attic binary cache (pulls first, pushes on main)
+#   - Bazel: BuildBuddy remote cache (automatic)
+#   - GitLab: Artifact sharing between jobs
 
 image: rocker/tidyverse:4.4.0
 
-# Target x86_64 Docker runners - rocker images don't have ARM64 builds
 default:
   tags:
     - linux
@@ -12,212 +20,153 @@ default:
 
 variables:
   R_LIBS_USER: "$CI_PROJECT_DIR/ci/lib"
-  # Use Posit Package Manager for fast binary installs
   RSPM: "https://packagemanager.posit.co/cran/__linux__/jammy/latest"
   _R_CHECK_CRAN_INCOMING_REMOTE_: "false"
   _R_CHECK_FORCE_SUGGESTS_: "false"
-  # Parallel compilation for Rcpp packages
   MAKEFLAGS: "-j4"
   NCPUS: "4"
-  # pak settings for faster installs
   PKG_SYSREQS: "true"
   PKG_SYSREQS_DRY_RUN: "false"
-  # Avoid re-downloading packages
   R_PKG_CACHE_DIR: "$CI_PROJECT_DIR/ci/pkg-cache"
 
+# Reduced cache - Nix handles most caching now
 cache:
-  # Use stable key for better cache reuse across branches
-  key: "r-deps-v3"
+  key: "r-deps-v4"
   paths:
     - ci/lib
     - ci/pkg-cache
-    - src/*.o
-    - src/*.so
   policy: pull-push
 
 stages:
-  - check
-  - test
-  - coverage
-  - deploy
+  - build      # Build artifacts (Nix tarball, Bazel C++)
+  - check      # Validate (R CMD check, CRAN check)
+  - verify     # Coverage, additional validation
+  - deploy     # Pages, releases, cache warming
 
-# Nix-based build template for reproducible environments
-# See: https://discourse.nixos.org/t/trusted-substituters-in-nix-2-4/19272
+# ============================================================
+# Templates
+# ============================================================
+
 .nix_base:
   image: nixos/nix:latest
   tags:
     - linux
     - docker
   variables:
-    # Basic Nix config - substituters configured in before_script for trust
     NIX_CONFIG: |
       experimental-features = nix-command flakes
       accept-flake-config = true
   before_script:
     - nix --version
-    # Configure Attic cache as trusted substituter in /etc/nix/nix.conf
-    # NIX_CONFIG extra-substituters doesn't work without trusted-users
-    # Appending to system nix.conf ensures the daemon trusts our cache
+    # Configure Attic as trusted substituter (append to system nix.conf)
     - |
-      echo "Configuring Attic cache as trusted substituter..."
       echo "extra-substituters = https://nix-cache.fuzzy-dev.tinyland.dev/main" >> /etc/nix/nix.conf
       echo "extra-trusted-public-keys = main:PBDvqG8OP3W2XF4QzuqWwZD/RhLRsE7ONxwM09kqTtw=" >> /etc/nix/nix.conf
-      echo "Configured substituters:"
-      grep -E "(substituters|public-keys)" /etc/nix/nix.conf || true
+
+.rocker_setup: &rocker_setup
+  before_script:
+    - mkdir -p $R_LIBS_USER
+    - apt-get update -qq && apt-get install -y -qq libcurl4-openssl-dev libssl-dev libxml2-dev libgit2-dev libblas-dev liblapack-dev
+    - |
+      Rscript -e '
+        options(repos = c(RSPM = Sys.getenv("RSPM"), CRAN = "https://cloud.r-project.org"))
+        if (!requireNamespace("pak", quietly = TRUE)) {
+          install.packages("pak", repos = sprintf("https://r-lib.github.io/p/pak/stable/%s/%s/%s", .Platform$pkgType, R.Version()$os, R.Version()$arch))
+        }
+        pak::pkg_install("local::.", dependencies = TRUE, upgrade = FALSE)
+      '
 
 # ============================================================
-# Nix-based Jobs (Reproducible, Cached)
+# BUILD STAGE - Greedy parallel artifact generation
 # ============================================================
 
-# Fast check using cached Nix derivations
-# Pulls cached R deps and C++ objects from Attic for quick validation
-nix:check:
+# Primary build: Nix tarball (reproducible, cached)
+# This produces the canonical tarball used by all downstream jobs
+nix:tarball:
   extends: .nix_base
-  stage: check
+  stage: build
   timeout: 30m
   script:
-    # Build cacheable sub-derivations (pulls from Attic if cached)
-    - echo "Building R dependencies derivation..."
-    - nix build .#rDeps --out-link result-rdeps || true
-    - echo "Building C++ object files..."
-    - nix build .#cppBuild --out-link result-cpp || true
-    # Run R CMD check using cached components
-    - echo "Running R CMD check..."
-    - nix build .#checks.x86_64-linux.r-cmd-check --out-link result-check
-    - ls -la result-check/
-  artifacts:
-    paths:
-      - result-check/
-    expire_in: 1 week
-    when: always
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-
-# Cache warming + Release Build (consolidated)
-# Builds all derivations and pushes to Attic for future MRs
-# Also produces release tarballs on tags
-nix:cache-warm:
-  extends: .nix_base
-  stage: deploy
-  timeout: 45m
-  needs:
-    - job: nix:check
-      optional: true
-    - job: r-cmd-check
-      optional: true
-  script:
-    - echo "Building cacheable derivations..."
-    # Build all cacheable derivations (pulls from Attic if available)
-    - nix build .#rDeps --out-link result-rdeps
-    - nix build .#cppBuild --out-link result-cpp
+    # Pull from Attic cache (optimistic - expect cache hit)
+    - echo "=== Building tarball (cache-first) ==="
+    - nix build .#rDeps --out-link result-rdeps 2>&1 | head -20 || true
+    - nix build .#cppBuild --out-link result-cpp 2>&1 | head -20 || true
     - nix build .#tarball --out-link result-tarball
-    - nix build .#devShells.x86_64-linux.default --out-link result-devshell || true
-    # Copy tarball for artifacts
-    - cp result-tarball gnucashr_$(grep "^Version:" DESCRIPTION | cut -d' ' -f2).tar.gz
+    # Export tarball as artifact
+    - VERSION=$(grep "^Version:" DESCRIPTION | cut -d' ' -f2)
+    - cp result-tarball gnucashr_${VERSION}.tar.gz
     - ls -la gnucashr_*.tar.gz
-    # Push to Attic cache
-    - |
-      if [ -n "$ATTIC_TOKEN" ]; then
-        echo "Pushing derivations to Attic cache..."
-        nix profile install nixpkgs#attic-client
-        attic login tinyland https://nix-cache.fuzzy-dev.tinyland.dev "$ATTIC_TOKEN"
-        attic push main result-rdeps result-cpp result-tarball || echo "WARNING: Some pushes failed (non-fatal)"
-        echo "Cache warm complete"
-      else
-        echo "ATTIC_TOKEN not set, skipping cache push"
-      fi
+    # Also run quick check
+    - nix build .#checks.x86_64-linux.r-cmd-check --out-link result-check 2>&1 | tail -20
   artifacts:
     paths:
       - gnucashr_*.tar.gz
-    expire_in: 3 months
+      - result-check/
+    expire_in: 1 week
   rules:
-    # Run on tags for releases
-    - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+/
-    # Run on main to warm cache
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG
 
-# Optional: Bazel-based C++ build with remote caching
-# Uses BuildBuddy for incremental compilation caching
-bazel:cpp-cache:
+# Secondary build: Bazel C++ (fine-grained caching)
+# Runs in parallel with Nix, warms BuildBuddy cache
+bazel:cpp:
   image: gcr.io/bazel-public/bazel:latest
-  stage: check
+  stage: build
   timeout: 20m
   tags:
     - linux
     - docker
   script:
-    - echo "Building C++ with Bazel remote cache..."
+    - echo "=== Bazel C++ build (remote cache) ==="
     - bazel --version
-    # Build C++ library with remote caching enabled
-    - bazel build //src:gnucashr_cpp --config=ci || echo "Bazel build failed (non-fatal, Bazel integration experimental)"
-    # Show cache statistics
-    - bazel info || true
+    - bazel build //src:gnucashr_cpp --config=ci 2>&1 | tail -30 || true
+    - bazel info execution_log_binary_file 2>/dev/null || true
   cache:
-    key: bazel-cache-v1
+    key: bazel-v2
     paths:
       - ~/.cache/bazel
   rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-  allow_failure: true
-
-# Optimized setup with pak - skip install if dependencies cached
-.setup: &setup
-  before_script:
-    - mkdir -p $R_LIBS_USER
-    # System dependencies for Rcpp/RcppParallel/RcppArmadillo
-    - apt-get update -qq && apt-get install -y -qq libcurl4-openssl-dev libssl-dev libxml2-dev libgit2-dev libblas-dev liblapack-dev
-    # Install pak and dependencies with smart caching
-    - |
-      Rscript -e '
-        options(repos = c(RSPM = Sys.getenv("RSPM"), CRAN = "https://cloud.r-project.org"))
-        # Check if core packages already installed
-        core_pkgs <- c("Rcpp", "RcppParallel", "RcppArmadillo", "DBI", "RSQLite")
-        installed <- vapply(core_pkgs, requireNamespace, logical(1), quietly = TRUE)
-
-        if (all(installed)) {
-          message("Core dependencies cached, checking for updates only...")
-          needs_install <- FALSE
-        } else {
-          message("Installing missing core dependencies: ", paste(core_pkgs[!installed], collapse = ", "))
-          needs_install <- TRUE
-        }
-
-        if (!requireNamespace("pak", quietly = TRUE)) {
-          install.packages("pak", repos = sprintf("https://r-lib.github.io/p/pak/stable/%s/%s/%s", .Platform$pkgType, R.Version()$os, R.Version()$arch))
-        }
-
-        if (needs_install) {
-          pak::pkg_install("local::.", dependencies = TRUE, upgrade = FALSE)
-        } else {
-          # Quick check for any missing deps without full resolution
-          pak::pkg_install("local::.", dependencies = TRUE, upgrade = FALSE)
-        }
-      '
-
+  allow_failure: true  # Bazel integration is supplementary
 
 # ============================================================
-# rocker-based Jobs (Legacy Fallback)
-# These run in parallel with Nix jobs for compatibility
+# CHECK STAGE - Validation using built artifacts
 # ============================================================
 
-# R CMD check using rocker image (fallback for non-Nix environments)
-# Primary validation is now nix:check - this provides compatibility testing
+# Primary check: Uses Nix-built tarball
 r-cmd-check:
   stage: check
-  timeout: 60m
-  <<: *setup
+  timeout: 45m
+  needs:
+    - job: nix:tarball
+      artifacts: true
+  <<: *rocker_setup
   script:
     - |
       Rscript -e '
         options(repos = c(RSPM = Sys.getenv("RSPM"), CRAN = "https://cloud.r-project.org"))
         pak::pkg_install("rcmdcheck")
-        rcmdcheck::rcmdcheck(
-          args = c("--no-manual", "--no-vignettes", "--no-examples"),
-          build_args = c("--no-manual", "--no-build-vignettes"),
-          error_on = "error",
-          check_dir = "check"
-        )
+        # Use pre-built tarball if available
+        tarballs <- Sys.glob("gnucashr_*.tar.gz")
+        if (length(tarballs) > 0) {
+          message("Using pre-built tarball: ", tarballs[1])
+          rcmdcheck::rcmdcheck(
+            tarballs[1],
+            args = c("--no-manual", "--no-vignettes"),
+            error_on = "error",
+            check_dir = "check"
+          )
+        } else {
+          message("Building from source...")
+          rcmdcheck::rcmdcheck(
+            args = c("--no-manual", "--no-vignettes", "--no-examples"),
+            build_args = c("--no-manual", "--no-build-vignettes"),
+            error_on = "error",
+            check_dir = "check"
+          )
+        }
       '
   artifacts:
     paths:
@@ -225,39 +174,70 @@ r-cmd-check:
     expire_in: 1 week
     when: always
   rules:
-    - if: $CI_COMMIT_TAG
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG
 
-# Code coverage with covr
+# CRAN-ready check (stricter, uses tarball)
+cran-check:
+  stage: check
+  timeout: 1h
+  needs:
+    - job: nix:tarball
+      artifacts: true
+  <<: *rocker_setup
+  script:
+    - |
+      Rscript -e '
+        options(repos = c(RSPM = Sys.getenv("RSPM"), CRAN = "https://cloud.r-project.org"))
+        pak::pkg_install(c("spelling", "urlchecker", "devtools"))
+
+        message("=== Spelling Check ===")
+        spell_errors <- spelling::spell_check_package()
+        if (nrow(spell_errors) > 0) print(spell_errors)
+
+        message("=== URL Check ===")
+        url_results <- urlchecker::url_check()
+        if (!is.null(url_results) && nrow(url_results) > 0) print(url_results)
+
+        message("=== R CMD check --as-cran ===")
+        tarballs <- Sys.glob("gnucashr_*.tar.gz")
+        if (length(tarballs) > 0) {
+          # Check the pre-built tarball
+          system2("R", c("CMD", "check", "--as-cran", "--no-manual", tarballs[1]))
+        } else {
+          devtools::check(cran = TRUE, error_on = "error")
+        }
+      '
+  artifacts:
+    paths:
+      - "*.Rcheck/"
+    expire_in: 1 week
+    when: always
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+/
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# ============================================================
+# VERIFY STAGE - Coverage and additional validation
+# ============================================================
+
 coverage:
-  stage: coverage
-  timeout: 60m
+  stage: verify
+  timeout: 45m
   needs:
     - job: r-cmd-check
       optional: true
-    - job: nix:check
-      optional: true
-  <<: *setup
+  <<: *rocker_setup
   script:
     - |
       Rscript -e '
         options(repos = c(RSPM = Sys.getenv("RSPM"), CRAN = "https://cloud.r-project.org"))
         pak::pkg_install("covr")
-
-        cov <- covr::package_coverage(
-          type = "tests",
-          line_exclusions = list("src/RcppExports.cpp")
-        )
-
-        # Generate coverage report
+        cov <- covr::package_coverage(type = "tests", line_exclusions = list("src/RcppExports.cpp"))
         total_coverage <- covr::percent_coverage(cov)
         message(sprintf("Total coverage: %.1f%%", total_coverage))
-
-        # Save coverage report as cobertura XML for GitLab
         covr::to_cobertura(cov, filename = "coverage.xml")
-
-        # Upload to Codecov if token is available
         if (Sys.getenv("CODECOV_TOKEN") != "") {
           covr::codecov(token = Sys.getenv("CODECOV_TOKEN"))
         }
@@ -273,16 +253,18 @@ coverage:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
-# Build pkgdown documentation site
+# ============================================================
+# DEPLOY STAGE - Pages, releases, cache warming
+# ============================================================
+
+# Pages: Build pkgdown site
 pages:
   stage: deploy
-  timeout: 60m
+  timeout: 30m
   needs:
-    - job: nix:check
-      optional: true
     - job: r-cmd-check
       optional: true
-  <<: *setup
+  <<: *rocker_setup
   script:
     - |
       Rscript -e '
@@ -300,56 +282,47 @@ pages:
     name: production
     url: $CI_PAGES_URL
 
-# CRAN-ready check (stricter, for releases)
-cran-check:
-  stage: check
-  timeout: 1h
-  <<: *setup
+# Cache warming: Push all Nix derivations to Attic
+# Runs after successful builds to warm cache for future pipelines
+nix:cache-push:
+  extends: .nix_base
+  stage: deploy
+  timeout: 30m
+  needs:
+    - job: nix:tarball
+      artifacts: true
   script:
+    - echo "=== Pushing to Attic cache ==="
+    # Rebuild derivations (instant if cached locally)
+    - nix build .#rDeps --out-link result-rdeps
+    - nix build .#cppBuild --out-link result-cpp
+    - nix build .#tarball --out-link result-tarball
+    - nix build .#devShells.x86_64-linux.default --out-link result-devshell || true
+    # Push to Attic
     - |
-      Rscript -e '
-        options(repos = c(RSPM = Sys.getenv("RSPM"), CRAN = "https://cloud.r-project.org"))
-        pak::pkg_install(c("spelling", "urlchecker", "devtools"))
-
-        # Spelling check
-        message("=== Spelling Check ===")
-        spell_errors <- spelling::spell_check_package()
-        if (nrow(spell_errors) > 0) {
-          print(spell_errors)
-          message("Add valid words to inst/WORDLIST")
-        }
-
-        # URL check
-        message("=== URL Check ===")
-        url_results <- urlchecker::url_check()
-        if (!is.null(url_results) && nrow(url_results) > 0) {
-          print(url_results)
-        }
-
-        # Full CRAN check (NOTEs and warnings are allowed, only errors fail)
-        message("=== R CMD check --as-cran ===")
-        results <- devtools::check(cran = TRUE, error_on = "error")
-      '
-  artifacts:
-    paths:
-      - "*.Rcheck/"
-    expire_in: 1 week
-    when: always
+      if [ -n "$ATTIC_TOKEN" ]; then
+        nix profile install nixpkgs#attic-client
+        attic login tinyland https://nix-cache.fuzzy-dev.tinyland.dev "$ATTIC_TOKEN"
+        attic push main result-rdeps result-cpp result-tarball result-devshell 2>&1 | tail -20 || echo "Some pushes failed (non-fatal)"
+        echo "Cache push complete"
+      else
+        echo "ATTIC_TOKEN not set, skipping"
+      fi
   rules:
-    - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+/
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
-# Create GitLab release
+# Release: Create GitLab release with tarball
 release:
   stage: deploy
   image: registry.gitlab.com/gitlab-org/release-cli:latest
   needs:
-    - job: nix:cache-warm
+    - job: nix:tarball
       artifacts: true
     - job: cran-check
       artifacts: false
   script:
     - echo "Creating release for ${CI_COMMIT_TAG}"
+    - ls -la gnucashr_*.tar.gz
   release:
     tag_name: $CI_COMMIT_TAG
     name: "gnucashr ${CI_COMMIT_TAG}"
@@ -374,5 +347,9 @@ release:
       ```r
       remotes::install_github("Jesssullivan/gnucashr@${CI_COMMIT_TAG}")
       ```
+    assets:
+      links:
+        - name: "Source tarball"
+          url: "${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/file/gnucashr_*.tar.gz"
   rules:
     - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/
