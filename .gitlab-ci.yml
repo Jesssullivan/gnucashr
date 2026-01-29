@@ -36,6 +36,9 @@ default:
 # Base template: Pull from cache only
 .nix_base:
   image: nixos/nix:latest
+  variables:
+    # Disable renv auto-activation (we use Nix for dependencies)
+    RENV_ACTIVATE_PROJECT: "FALSE"
   before_script:
     - nix --version
     # Install and configure Attic client
@@ -43,10 +46,15 @@ default:
     - attic login tinyland "$ATTIC_SERVER" "$ATTIC_TOKEN"
     # Configure Nix to use Attic as substituter (for pulling)
     - attic use "$ATTIC_CACHE"
+    # Remove .Rprofile to prevent renv from interfering
+    - rm -f .Rprofile
 
 # Greedy template: Watch-store for continuous push during build
 .nix_greedy:
   image: nixos/nix:latest
+  variables:
+    # Disable renv auto-activation (we use Nix for dependencies)
+    RENV_ACTIVATE_PROJECT: "FALSE"
   before_script:
     - nix --version
     # Install and configure Attic client
@@ -54,6 +62,8 @@ default:
     - attic login tinyland "$ATTIC_SERVER" "$ATTIC_TOKEN"
     # Configure Nix to use Attic as substituter (for pulling)
     - attic use "$ATTIC_CACHE"
+    # Remove .Rprofile to prevent renv from interfering
+    - rm -f .Rprofile
     # Start watch-store in background for greedy push (main branch only)
     - |
       if [ "$CI_COMMIT_BRANCH" = "$CI_DEFAULT_BRANCH" ]; then
