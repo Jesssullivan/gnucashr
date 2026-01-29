@@ -170,7 +170,7 @@ test:
 # Code coverage with covr
 coverage:
   stage: coverage
-  timeout: 30m
+  timeout: 60m
   needs:
     - job: test
   <<: *setup
