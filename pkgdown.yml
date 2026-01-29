@@ -8,7 +8,7 @@ articles:
   importing-data: importing-data.html
   articles/performance-benchmarks: performance-benchmarks.html
   articles/rcpp-internals: rcpp-internals.html
-last_built: 2026-01-29T08:14Z
+last_built: 2026-01-29T08:28Z
 urls:
   reference: https://tinyland.gitlab.io/projects/gnucashr/reference
   article: https://tinyland.gitlab.io/projects/gnucashr/articles
