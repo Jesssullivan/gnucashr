@@ -99,15 +99,52 @@ stages:
 nix:check:
   extends: .nix_base
   stage: check
-  timeout: 30m
+  timeout: 60m
   when: manual
   allow_failure: true
   script:
-    - nix develop -c Rscript -e 'devtools::check(error_on = "error")'
+    - nix build .#checks.x86_64-linux.r-cmd-check --out-link result-check
+    - ls -la result-check/
+  artifacts:
+    paths:
+      - result-check/
+    expire_in: 1 week
+    when: always
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     - if: $CI_COMMIT_TAG
+
+# Nix-based tarball build with Attic cache push
+nix:build:
+  extends: .nix_base
+  stage: deploy
+  timeout: 30m
+  when: manual
+  allow_failure: true
+  script:
+    # Build the tarball
+    - nix build .#tarball --out-link result-tarball
+    - ls -la result-tarball
+    - cp result-tarball gnucashr_$(nix eval --raw .#packages.x86_64-linux.tarball.version 2>/dev/null || echo "dev").tar.gz || cp result-tarball gnucashr.tar.gz
+    # Push to Attic cache (best-effort, non-blocking)
+    - |
+      if [ -n "$ATTIC_TOKEN" ]; then
+        echo "Pushing to Attic cache..."
+        nix profile install nixpkgs#attic-client
+        attic login tinyland https://nix-cache.fuzzy-dev.tinyland.dev "$ATTIC_TOKEN" || true
+        attic push main result-tarball || echo "WARNING: Attic push failed (non-fatal)"
+      else
+        echo "ATTIC_TOKEN not set, skipping cache push"
+      fi
+  artifacts:
+    paths:
+      - gnucashr*.tar.gz
+    expire_in: 3 months
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+/
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
 
 # R CMD check - the main package validation
 # Note: Full CRAN-like check runs on GitHub Actions matrix

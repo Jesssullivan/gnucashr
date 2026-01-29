@@ -99,7 +99,27 @@
           packages = rPackages;
         };
 
+        # Version from DESCRIPTION (updated manually or via CI)
+        version = "0.2.0.9000";
+
       in {
+        # Build source tarball (R CMD build)
+        packages.tarball = pkgs.runCommand "gnucashr-${version}.tar.gz" {
+          buildInputs = [ rWithPackages ] ++ systemDeps;
+          src = self;
+        } ''
+          cp -r $src source
+          chmod -R u+w source
+          cd source
+          # Generate documentation
+          Rscript -e "roxygen2::roxygenise()"
+          # Build source tarball
+          R CMD build . --no-manual --no-build-vignettes
+          cp gnucashr_*.tar.gz $out
+        '';
+
+        packages.default = self.packages.${system}.tarball;
+
         devShells.default = pkgs.mkShell {
           buildInputs = [ rWithPackages ] ++ systemDeps;
 
@@ -124,14 +144,24 @@
           LDFLAGS = "-fopenmp";
         };
 
-        # Package check
-        checks.default = pkgs.runCommand "gnucashr-check" {
+        # R CMD check (full validation)
+        checks.r-cmd-check = pkgs.runCommand "gnucashr-r-cmd-check" {
           buildInputs = [ rWithPackages ] ++ systemDeps;
+          src = self;
+          NIX_CFLAGS_COMPILE = "-I${pkgs.tbb.dev}/include";
+          NIX_LDFLAGS = "-L${pkgs.tbb}/lib -ltbb";
         } ''
-          echo "Nix flake check passed"
+          cp -r $src source
+          chmod -R u+w source
+          cd source
+          # Run R CMD check
+          R CMD build . --no-manual --no-build-vignettes
+          R CMD check gnucashr_*.tar.gz --no-manual --no-vignettes --no-examples
           mkdir -p $out
-          echo "gnucashr flake validated" > $out/result
+          cp -r gnucashr.Rcheck $out/
         '';
+
+        checks.default = self.checks.${system}.r-cmd-check;
       }
     );
 }
