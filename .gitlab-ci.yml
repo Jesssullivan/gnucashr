@@ -35,6 +35,20 @@ stages:
   - coverage
   - deploy
 
+# Nix-based build template for reproducible environments
+.nix_base:
+  image: nixos/nix:latest
+  variables:
+    NIX_CONFIG: |
+      experimental-features = nix-command flakes
+      accept-flake-config = true
+  before_script:
+    - nix --version
+    # Attic cache setup (uncomment when ATTIC_TOKEN is available)
+    # - nix profile install nixpkgs#attic-client
+    # - attic login tinyland https://attic.tinyland.dev $ATTIC_TOKEN
+    # - attic use tinyland
+
 # Optimized setup with pak - skip install if dependencies cached
 .setup: &setup
   before_script:
@@ -68,6 +82,21 @@ stages:
           pak::pkg_install("local::.", dependencies = TRUE, upgrade = FALSE)
         }
       '
+
+# Nix-based R CMD check - reproducible environment via flake.nix
+# Manual trigger until proven stable, runs in parallel with r-cmd-check
+nix:check:
+  extends: .nix_base
+  stage: check
+  timeout: 30m
+  when: manual
+  allow_failure: true
+  script:
+    - nix develop -c Rscript -e 'devtools::check(error_on = "error")'
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG
 
 # R CMD check - the main package validation
 # Note: Full CRAN-like check runs on GitHub Actions matrix
