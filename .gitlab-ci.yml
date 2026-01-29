@@ -260,7 +260,7 @@ coverage:
 # Pages: Build pkgdown site
 pages:
   stage: deploy
-  timeout: 30m
+  timeout: 45m
   needs:
     - job: r-cmd-check
       optional: true
