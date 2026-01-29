@@ -1,0 +1,3 @@
+# tools/BUILD.bazel - Export R packages list for Bazel
+
+exports_files(["r_packages.csv"])

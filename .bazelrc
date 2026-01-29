@@ -1,0 +1,86 @@
+# gnucashr Bazel Configuration
+# Remote caching enabled for fast incremental builds
+
+# ============================================================
+# Build Settings
+# ============================================================
+
+# C++ standard and optimization
+build --cxxopt=-std=c++17
+build --copt=-O2
+build --copt=-fPIC
+
+# OpenMP support for RcppParallel
+build --copt=-fopenmp
+build --linkopt=-fopenmp
+
+# TBB for RcppParallel threading
+build --linkopt=-ltbb
+
+# ============================================================
+# Remote Caching - BuildBuddy (Free Tier)
+# https://www.buildbuddy.io/
+# ============================================================
+
+# Enable remote caching (anonymous, free tier)
+build --remote_cache=grpcs://remote.buildbuddy.io
+
+# Build event streaming for insights
+build --bes_results_url=https://app.buildbuddy.io/invocation/
+build --bes_backend=grpcs://remote.buildbuddy.io
+
+# Cache read/write mode (change to --remote_upload_local_results=false for read-only)
+build --remote_upload_local_results=true
+
+# ============================================================
+# Alternative: Self-hosted bazel-remote
+# Uncomment to use self-hosted cache instead of BuildBuddy
+# ============================================================
+
+# build --remote_cache=http://localhost:9090
+# build --remote_upload_local_results=true
+
+# ============================================================
+# CI Configuration
+# ============================================================
+
+# CI preset - faster builds, more caching
+build:ci --remote_upload_local_results=true
+build:ci --jobs=4
+build:ci --verbose_failures
+
+# Local preset - disable remote for offline work
+build:local --remote_cache=
+build:local --bes_backend=
+build:local --bes_results_url=
+
+# ============================================================
+# Test Settings
+# ============================================================
+
+test --test_output=errors
+test --test_verbose_timeout_warnings
+
+# ============================================================
+# Platform Settings
+# ============================================================
+
+# Linux
+build:linux --copt=-D_GLIBCXX_USE_CXX11_ABI=1
+
+# macOS
+build:macos --copt=-D_DARWIN_C_SOURCE
+
+# ============================================================
+# Startup Options (performance)
+# ============================================================
+
+# Keep Bazel server running for faster incremental builds
+startup --host_jvm_args=-Xmx2g
+
+# ============================================================
+# User Configuration (gitignored)
+# ============================================================
+
+# Import user-specific configuration if it exists
+try-import %workspace%/.bazelrc.user

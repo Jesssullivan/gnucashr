@@ -60,13 +60,24 @@ stages:
     # - nix profile install nixpkgs#attic-client
     # - attic login tinyland https://nix-cache.fuzzy-dev.tinyland.dev $ATTIC_TOKEN
 
-# Optional: Nix-based R CMD check (complementary validation)
-# Uses reproducible Nix environment instead of rocker image
+# ============================================================
+# Nix-based Jobs (Reproducible, Cached)
+# ============================================================
+
+# Fast check using cached Nix derivations
+# Pulls cached R deps and C++ objects from Attic for quick validation
 nix:check:
   extends: .nix_base
   stage: check
   timeout: 30m
   script:
+    # Build cacheable sub-derivations (pulls from Attic if cached)
+    - echo "Building R dependencies derivation..."
+    - nix build .#rDeps --out-link result-rdeps || true
+    - echo "Building C++ object files..."
+    - nix build .#cppBuild --out-link result-cpp || true
+    # Run R CMD check using cached components
+    - echo "Running R CMD check..."
     - nix build .#checks.x86_64-linux.r-cmd-check --out-link result-check
     - ls -la result-check/
   artifacts:
@@ -77,6 +88,76 @@ nix:check:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# Cache warming + Release Build (consolidated)
+# Builds all derivations and pushes to Attic for future MRs
+# Also produces release tarballs on tags
+nix:cache-warm:
+  extends: .nix_base
+  stage: deploy
+  timeout: 45m
+  needs:
+    - job: nix:check
+      optional: true
+    - job: r-cmd-check
+      optional: true
+  script:
+    - echo "Building cacheable derivations..."
+    # Build all cacheable derivations (pulls from Attic if available)
+    - nix build .#rDeps --out-link result-rdeps
+    - nix build .#cppBuild --out-link result-cpp
+    - nix build .#tarball --out-link result-tarball
+    - nix build .#devShells.x86_64-linux.default --out-link result-devshell || true
+    # Copy tarball for artifacts
+    - cp result-tarball gnucashr_$(grep "^Version:" DESCRIPTION | cut -d' ' -f2).tar.gz
+    - ls -la gnucashr_*.tar.gz
+    # Push to Attic cache
+    - |
+      if [ -n "$ATTIC_TOKEN" ]; then
+        echo "Pushing derivations to Attic cache..."
+        nix profile install nixpkgs#attic-client
+        attic login tinyland https://nix-cache.fuzzy-dev.tinyland.dev "$ATTIC_TOKEN"
+        attic push main result-rdeps result-cpp result-tarball || echo "WARNING: Some pushes failed (non-fatal)"
+        echo "Cache warm complete"
+      else
+        echo "ATTIC_TOKEN not set, skipping cache push"
+      fi
+  artifacts:
+    paths:
+      - gnucashr_*.tar.gz
+    expire_in: 3 months
+  rules:
+    # Run on tags for releases
+    - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+/
+    # Run on main to warm cache
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# Optional: Bazel-based C++ build with remote caching
+# Uses BuildBuddy for incremental compilation caching
+bazel:cpp-cache:
+  image: gcr.io/bazel-public/bazel:latest
+  stage: check
+  timeout: 20m
+  tags:
+    - linux
+    - docker
+  script:
+    - echo "Building C++ with Bazel remote cache..."
+    - bazel --version
+    # Build C++ library with remote caching enabled
+    - bazel build //src:gnucashr_cpp --config=ci || echo "Bazel build failed (non-fatal, Bazel integration experimental)"
+    # Show cache statistics
+    - bazel info || true
+  cache:
+    key: bazel-cache-v1
+    paths:
+      - ~/.cache/bazel
+  rules:
+    # Manual trigger on main branch (experimental)
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual
+      allow_failure: true
+  allow_failure: true
 
 # Optimized setup with pak - skip install if dependencies cached
 .setup: &setup
@@ -113,9 +194,13 @@ nix:check:
       '
 
 
-# R CMD check - the main package validation
-# Note: Full CRAN-like check runs on GitHub Actions matrix
-# GitLab check is streamlined for faster feedback
+# ============================================================
+# rocker-based Jobs (Legacy Fallback)
+# These run in parallel with Nix jobs for compatibility
+# ============================================================
+
+# R CMD check using rocker image (fallback for non-Nix environments)
+# Primary validation is now nix:check - this provides compatibility testing
 r-cmd-check:
   stage: check
   timeout: 60m
@@ -138,37 +223,13 @@ r-cmd-check:
     expire_in: 1 week
     when: always
   rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    # Run on tags for release validation
     - if: $CI_COMMIT_TAG
-
-# Run testthat tests (can run in parallel with r-cmd-check via DAG)
-test:
-  stage: test
-  timeout: 60m
-  needs:
-    - job: r-cmd-check
-      optional: true
-  <<: *setup
-  script:
-    - |
-      Rscript -e '
-        options(repos = c(RSPM = Sys.getenv("RSPM"), CRAN = "https://cloud.r-project.org"))
-        pak::pkg_install("testthat")
-        # Run tests from source directory with JUnit output
-        results <- testthat::test_local(reporter = testthat::JunitReporter$new(file = "test-results.xml"))
-        # Check for failures
-        if (any(as.data.frame(results)$failed > 0)) {
-          quit(status = 1)
-        }
-      '
-  artifacts:
-    reports:
-      junit: test-results.xml
-    expire_in: 1 week
-    when: always
-  rules:
+    # Optional on MRs (nix:check is primary)
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: manual
+      allow_failure: true
+    # Run on main for compatibility testing
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
 # Code coverage with covr
@@ -176,7 +237,10 @@ coverage:
   stage: coverage
   timeout: 60m
   needs:
-    - job: test
+    - job: r-cmd-check
+      optional: true
+    - job: nix:check
+      optional: true
   <<: *setup
   script:
     - |
@@ -217,7 +281,10 @@ pages:
   stage: deploy
   timeout: 60m
   needs:
+    - job: nix:check
+      optional: true
     - job: r-cmd-check
+      optional: true
   <<: *setup
   script:
     - |
@@ -277,43 +344,12 @@ cran-check:
       when: manual
       allow_failure: true
 
-# Build source package for release (Nix-based, reproducible)
-# Pulls R dependencies and C++ build artifacts from Attic cache
-build-package:
-  extends: .nix_base
-  stage: deploy
-  timeout: 30m
-  needs:
-    - job: r-cmd-check
-  script:
-    # Build tarball - Nix pulls cached R deps from Attic
-    - nix build .#tarball --out-link result-tarball
-    - cp result-tarball gnucashr_$(grep "^Version:" DESCRIPTION | cut -d' ' -f2).tar.gz
-    - ls -la gnucashr_*.tar.gz
-    # Push build closure to Attic for future builds
-    - |
-      if [ -n "$ATTIC_TOKEN" ]; then
-        echo "Pushing build artifacts to Attic cache..."
-        nix profile install nixpkgs#attic-client
-        attic login tinyland https://nix-cache.fuzzy-dev.tinyland.dev "$ATTIC_TOKEN" || true
-        attic push main result-tarball || echo "WARNING: Attic push failed (non-fatal)"
-      fi
-  artifacts:
-    paths:
-      - gnucashr_*.tar.gz
-    expire_in: 3 months
-  rules:
-    # Run on tags for releases
-    - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+/
-    # Run on main to warm Attic cache for R deps and C++ artifacts
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-
 # Create GitLab release
 release:
   stage: deploy
   image: registry.gitlab.com/gitlab-org/release-cli:latest
   needs:
-    - job: build-package
+    - job: nix:cache-warm
       artifacts: true
     - job: cran-check
       artifacts: false

@@ -54,3 +54,8 @@ renv/sandbox/
 .direnv/
 result
 result-*
+
+# Bazel
+bazel-*
+.bazelrc.user
+.cache/bazel/

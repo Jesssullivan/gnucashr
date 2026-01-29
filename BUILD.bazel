@@ -1,0 +1,89 @@
+# gnucashr Root BUILD.bazel
+# R package build targets with C++ compilation caching
+
+load("@rules_r//R:defs.bzl", "r_pkg", "r_unit_test", "r_pkg_test")
+
+# ============================================================
+# Main R Package Target
+# ============================================================
+
+r_pkg(
+    name = "gnucashr",
+    srcs = glob(
+        ["R/**/*.R"],
+        exclude = ["R/RcppExports.R"],
+    ) + [
+        "DESCRIPTION",
+        "NAMESPACE",
+        "LICENSE",
+    ],
+    cc_deps = [
+        "//src:gnucashr_cpp",
+    ],
+    # Include generated files
+    data = glob([
+        "man/**/*.Rd",
+        "inst/**/*",
+    ]),
+    # R package dependencies from CRAN
+    deps = [
+        "@cran//DBI",
+        "@cran//RSQLite",
+        "@cran//dplyr",
+        "@cran//tibble",
+        "@cran//purrr",
+        "@cran//lubridate",
+        "@cran//readr",
+        "@cran//R6",
+        "@cran//rlang",
+        "@cran//xml2",
+        "@cran//Rcpp",
+        "@cran//RcppParallel",
+        "@cran//jsonlite",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# ============================================================
+# Package Tests
+# ============================================================
+
+r_unit_test(
+    name = "gnucashr_tests",
+    pkg = ":gnucashr",
+    srcs = glob(["tests/testthat/**/*.R"]),
+    deps = [
+        "@cran//testthat",
+        "@cran//withr",
+    ],
+)
+
+# Full R CMD check validation
+r_pkg_test(
+    name = "gnucashr_check",
+    pkg = ":gnucashr",
+    check_args = [
+        "--no-manual",
+        "--no-vignettes",
+        "--no-examples",
+    ],
+)
+
+# ============================================================
+# Convenience Aliases
+# ============================================================
+
+alias(
+    name = "build",
+    actual = ":gnucashr",
+)
+
+alias(
+    name = "test",
+    actual = ":gnucashr_tests",
+)
+
+alias(
+    name = "check",
+    actual = ":gnucashr_check",
+)

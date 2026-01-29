@@ -1,0 +1,93 @@
+# gnucashr C++ Source BUILD.bazel
+# Fine-grained compilation caching for Rcpp code
+
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+# ============================================================
+# C++ Library for Rcpp Code
+# Each .cpp file is compiled independently and cached
+# ============================================================
+
+cc_library(
+    name = "gnucashr_cpp",
+    srcs = glob(
+        ["*.cpp"],
+        exclude = ["RcppExports.cpp"],  # Generated file, handled separately
+    ) + ["RcppExports.cpp"],
+    hdrs = glob(["*.h"]),
+    copts = [
+        "-std=c++17",
+        "-fopenmp",
+        "-fPIC",
+        "-DNDEBUG",
+        # Rcpp include paths (resolved at build time)
+        "-I$(location @cran//Rcpp)/include",
+        "-I$(location @cran//RcppParallel)/include",
+        "-I$(location @cran//RcppArmadillo)/include",
+    ],
+    linkopts = [
+        "-fopenmp",
+        "-ltbb",
+    ],
+    deps = [
+        "@cran//Rcpp",
+        "@cran//RcppParallel",
+        "@cran//RcppArmadillo",
+    ],
+    # Enable for R package linking
+    linkstatic = False,
+    visibility = ["//visibility:public"],
+)
+
+# ============================================================
+# Individual Compilation Units (Maximum Granularity)
+# Uncomment to enable per-file caching for larger codebases
+# ============================================================
+
+# cc_library(
+#     name = "fraction",
+#     srcs = ["fraction.cpp"],
+#     hdrs = glob(["*.h"]),
+#     copts = ["-std=c++17", "-fopenmp", "-fPIC"],
+#     deps = ["@cran//Rcpp", "@cran//RcppArmadillo"],
+# )
+
+# cc_library(
+#     name = "guid",
+#     srcs = ["guid.cpp"],
+#     hdrs = glob(["*.h"]),
+#     copts = ["-std=c++17", "-fopenmp", "-fPIC"],
+#     deps = ["@cran//Rcpp"],
+# )
+
+# cc_library(
+#     name = "monte_carlo",
+#     srcs = ["monte-carlo.cpp"],
+#     hdrs = glob(["*.h"]),
+#     copts = ["-std=c++17", "-fopenmp", "-fPIC"],
+#     deps = ["@cran//Rcpp", "@cran//RcppParallel", "@cran//RcppArmadillo"],
+# )
+
+# cc_library(
+#     name = "parallel_scenarios",
+#     srcs = ["parallel-scenarios.cpp"],
+#     hdrs = glob(["*.h"]),
+#     copts = ["-std=c++17", "-fopenmp", "-fPIC"],
+#     deps = ["@cran//Rcpp", "@cran//RcppParallel"],
+# )
+
+# cc_library(
+#     name = "validation",
+#     srcs = ["validation.cpp"],
+#     hdrs = glob(["*.h"]),
+#     copts = ["-std=c++17", "-fopenmp", "-fPIC"],
+#     deps = ["@cran//Rcpp"],
+# )
+
+# cc_library(
+#     name = "ofx_parser",
+#     srcs = ["ofx-parser.cpp"],
+#     hdrs = glob(["*.h"]),
+#     copts = ["-std=c++17", "-fopenmp", "-fPIC"],
+#     deps = ["@cran//Rcpp"],
+# )
