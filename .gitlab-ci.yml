@@ -4,10 +4,8 @@
 
 image: rocker/tidyverse:4.4.0
 
-# Force x86_64 runners - rocker images don't support ARM64
-default:
-  tags:
-    - saas-linux-medium-amd64
+# Note: Untagged jobs run on small Linux x86-64 by default on GitLab.com
+# Medium/large runners require Premium tier
 
 variables:
   R_LIBS_USER: "$CI_PROJECT_DIR/ci/lib"
@@ -43,8 +41,6 @@ stages:
 # Nix-based build template for reproducible environments
 .nix_base:
   image: nixos/nix:latest
-  tags:
-    - saas-linux-medium-amd64
   variables:
     NIX_CONFIG: |
       experimental-features = nix-command flakes
