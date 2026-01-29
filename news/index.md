@@ -1,5 +1,15 @@
 # Changelog
 
+## gnucashr 0.2.0.9000 (development)
+
+*Development version - unreleased*
+
+### Changes
+
+- Increase CI timeouts for test (30m → 60m) and pages (20m → 60m) jobs
+
+------------------------------------------------------------------------
+
 ## gnucashr 0.2.0
 
 ### New Features
