@@ -7,7 +7,7 @@ image: rocker/tidyverse:4.4.0
 # Target x86_64 Docker runners - rocker images don't have ARM64 builds
 default:
   tags:
-    - x86_64
+    - linux
     - docker
 
 variables:
@@ -45,7 +45,7 @@ stages:
 .nix_base:
   image: nixos/nix:latest
   tags:
-    - x86_64
+    - linux
     - docker
   variables:
     NIX_CONFIG: |
