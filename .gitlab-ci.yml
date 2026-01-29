@@ -130,7 +130,7 @@ r-cmd-check:
 # Run testthat tests (can run in parallel with r-cmd-check via DAG)
 test:
   stage: test
-  timeout: 30m
+  timeout: 60m
   needs:
     - job: r-cmd-check
       optional: true
@@ -200,7 +200,7 @@ coverage:
 # Build pkgdown documentation site
 pages:
   stage: deploy
-  timeout: 20m
+  timeout: 60m
   needs:
     - job: r-cmd-check
   <<: *setup

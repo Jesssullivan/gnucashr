@@ -1,6 +1,6 @@
 Package: gnucashr
 Title: Read, Analyze, and Model GnuCash Accounting Data in R
-Version: 0.2.0
+Version: 0.2.0.9000
 Authors@R:
     person("Jess", "Sullivan", , "jess@sulliwood.org", role = c("aut", "cre", "cph"))
 Description: Read GnuCash SQLite and XML files directly into R for financial
