@@ -1,0 +1,18 @@
+"""gnucashr - Bazel Module Configuration
+
+Bazel handles C++ compilation caching for Rcpp code.
+Uses WORKSPACE for rules_r (no bzlmod support yet).
+"""
+
+module(
+    name = "gnucashr",
+    version = "0.2.0",
+)
+
+# Core Bazel rules
+bazel_dep(name = "bazel_skylib", version = "1.5.0")
+bazel_dep(name = "rules_cc", version = "0.0.9")
+
+# Note: rules_r doesn't support bzlmod yet, so we use WORKSPACE.bazel
+# for R package dependencies. The MODULE.bazel enables Bazel 7+ compatibility
+# while falling back to WORKSPACE for R-specific rules.

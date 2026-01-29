@@ -1,15 +1,15 @@
 # GitLab CI/CD Pipeline for gnucashr R Package
-# Nix-only pipeline with Attic binary cache
+# Nix-only pipeline with greedy Attic binary cache
 #
 # Architecture:
-#   nix:build ─┬─> nix:check (CRAN) ─┬─> nix:coverage
-#              │                      └─> nix:pages
-#              └─> bazel:cpp (optional)
+#   nix:build ─┬─> nix:cran-check ─┬─> nix:coverage
+#              │                    └─> pages
+#              └─> bazel:cpp (parallel)
 #
 # Cache Strategy:
-#   - Attic: Primary cache for all Nix derivations
-#   - Uses `attic use` for automatic substituter configuration
-#   - Pushes to cache on main branch only
+#   - Attic: Greedy push/pull with watch-store mode
+#   - Derivations pushed as they're built (not just at end)
+#   - Downstream jobs immediately benefit from cached artifacts
 
 stages:
   - build      # Build tarball + R CMD check
@@ -33,6 +33,7 @@ default:
 # Templates
 # ============================================================
 
+# Base template: Pull from cache only
 .nix_base:
   image: nixos/nix:latest
   before_script:
@@ -40,21 +41,46 @@ default:
     # Install and configure Attic client
     - nix profile install nixpkgs#attic-client
     - attic login tinyland "$ATTIC_SERVER" "$ATTIC_TOKEN"
-    # Configure Nix to use Attic as substituter (automatic)
+    # Configure Nix to use Attic as substituter (for pulling)
     - attic use "$ATTIC_CACHE"
 
+# Greedy template: Watch-store for continuous push during build
+.nix_greedy:
+  image: nixos/nix:latest
+  before_script:
+    - nix --version
+    # Install and configure Attic client
+    - nix profile install nixpkgs#attic-client
+    - attic login tinyland "$ATTIC_SERVER" "$ATTIC_TOKEN"
+    # Configure Nix to use Attic as substituter (for pulling)
+    - attic use "$ATTIC_CACHE"
+    # Start watch-store in background for greedy push (main branch only)
+    - |
+      if [ "$CI_COMMIT_BRANCH" = "$CI_DEFAULT_BRANCH" ]; then
+        echo "Starting greedy cache push (watch-store)..."
+        attic watch-store "$ATTIC_CACHE" &
+        echo $! > /tmp/watch-store.pid
+      fi
+  after_script:
+    # Stop watch-store if running
+    - |
+      if [ -f /tmp/watch-store.pid ]; then
+        kill $(cat /tmp/watch-store.pid) 2>/dev/null || true
+        echo "Stopped watch-store"
+      fi
+
 # ============================================================
-# BUILD STAGE - Primary Nix build with cache integration
+# BUILD STAGE - Greedy parallel builds
 # ============================================================
 
 nix:build:
-  extends: .nix_base
+  extends: .nix_greedy
   stage: build
   timeout: 45m
   script:
-    - echo "=== Building gnucashr with Attic cache ==="
+    - echo "=== Building gnucashr with greedy Attic cache ==="
 
-    # Build sub-derivations (cached)
+    # Build sub-derivations (pulls from cache, pushes as built)
     - echo "Building R dependencies..."
     - nix build .#rDeps --out-link result-rdeps 2>&1 | tail -10
 
@@ -74,12 +100,7 @@ nix:build:
     - nix build .#checks.x86_64-linux.r-cmd-check --out-link result-check 2>&1 | tail -30
     - cp -r result-check/gnucashr.Rcheck check/ || mkdir -p check
 
-    # Push to Attic cache (main branch only)
-    - |
-      if [ "$CI_COMMIT_BRANCH" = "$CI_DEFAULT_BRANCH" ]; then
-        echo "=== Pushing to Attic cache ==="
-        attic push "$ATTIC_CACHE" result-rdeps result-cpp result-tarball 2>&1 | tail -10 || echo "Push completed (some failures are normal)"
-      fi
+    - echo "=== Build complete ==="
   artifacts:
     paths:
       - gnucashr_*.tar.gz
@@ -91,7 +112,7 @@ nix:build:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     - if: $CI_COMMIT_TAG
 
-# Secondary build: Bazel C++ (optional, for comparison)
+# Bazel C++ build (parallel with nix:build)
 bazel:cpp:
   image: gcr.io/bazel-public/bazel:latest
   stage: build
@@ -100,14 +121,16 @@ bazel:cpp:
     - linux
     - docker
   script:
-    - echo "=== Bazel C++ build (remote cache) ==="
+    - echo "=== Bazel C++ build (BuildBuddy remote cache) ==="
     - bazel --version
-    - bazel build //src:gnucashr_cpp --config=ci 2>&1 | tail -30 || true
+    # Use --enable_workspace for hybrid bzlmod/WORKSPACE mode
+    - bazel build //src:gnucashr_cpp --config=ci --enable_workspace 2>&1 | tail -50
   cache:
-    key: bazel-v2
+    key: bazel-v3
     paths:
       - ~/.cache/bazel
   rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   allow_failure: true
 
@@ -186,7 +209,6 @@ nix:coverage:
 # DEPLOY STAGE - Pages, releases
 # ============================================================
 
-# GitLab Pages deployment (must be named exactly "pages")
 pages:
   extends: .nix_base
   stage: deploy
@@ -210,7 +232,6 @@ pages:
     name: production
     url: $CI_PAGES_URL
 
-# Release: Create GitLab release with tarball
 release:
   stage: deploy
   image: registry.gitlab.com/gitlab-org/release-cli:latest
