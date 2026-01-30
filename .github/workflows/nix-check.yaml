@@ -42,6 +42,11 @@ jobs:
       - name: Show flake info
         run: nix flake show
 
+      - name: Remove renv .Rprofile (prevents interference with Nix)
+        run: rm -f .Rprofile
+
       - name: Run R CMD check via Nix
+        env:
+          RENV_ACTIVATE_PROJECT: "FALSE"
         run: |
           nix develop --command Rscript -e 'devtools::check(error_on = "error")'
