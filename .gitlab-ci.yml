@@ -90,24 +90,27 @@ nix:build:
   script:
     - echo "=== Building gnucashr with greedy Attic cache ==="
 
-    # Build sub-derivations (pulls from cache, pushes as built)
-    - echo "Building R dependencies..."
-    - nix build .#rDeps --out-link result-rdeps 2>&1 | tail -10
-
-    - echo "Building C++ objects..."
-    - nix build .#cppBuild --out-link result-cpp 2>&1 | tail -10
-
-    - echo "Building tarball..."
-    - nix build .#tarball --out-link result-tarball
+    # Build sub-derivations in PARALLEL (pulls from cache, pushes as built)
+    # watch-store pushes each derivation as it completes
+    - echo "Building all derivations in parallel..."
+    - |
+      nix build \
+        .#rDeps \
+        .#cppBuild \
+        .#tarball \
+        .#checks.x86_64-linux.r-cmd-check \
+        --out-link result \
+        --max-jobs 4 \
+        2>&1 | tail -50
 
     # Export tarball as artifact
     - VERSION=$(grep "^Version:" DESCRIPTION | cut -d' ' -f2)
+    - nix build .#tarball --out-link result-tarball
     - cp result-tarball gnucashr_${VERSION}.tar.gz
     - ls -la gnucashr_*.tar.gz
 
-    # Run R CMD check via Nix
-    - echo "Running R CMD check..."
-    - nix build .#checks.x86_64-linux.r-cmd-check --out-link result-check 2>&1 | tail -30
+    # Copy check results
+    - nix build .#checks.x86_64-linux.r-cmd-check --out-link result-check
     - cp -r result-check/gnucashr.Rcheck check/ || mkdir -p check
 
     - echo "=== Build complete ==="
@@ -191,17 +194,12 @@ nix:coverage:
     - job: nix:build
       artifacts: true
   script:
-    - echo "=== Running coverage ==="
-    - |
-      nix develop --command bash -c '
-        Rscript -e "
-          cov <- covr::package_coverage(type = \"tests\", line_exclusions = list(\"src/RcppExports.cpp\"))
-          total_coverage <- covr::percent_coverage(cov)
-          message(sprintf(\"Total coverage: %.1f%%\", total_coverage))
-          covr::to_cobertura(cov, filename = \"coverage.xml\")
-        "
-      '
-  coverage: '/Total coverage: (\d+\.\d+)%/'
+    - echo "=== Running coverage via Nix derivation ==="
+    # Use cached coverage derivation (rebuilds only if source changed)
+    - nix build .#coverage --out-link result-coverage
+    - cp result-coverage/coverage.xml .
+    - cat result-coverage/summary.txt
+  coverage: '/line-rate="([0-9.]+)"/'
   artifacts:
     reports:
       coverage_report:
@@ -224,11 +222,10 @@ pages:
     - job: nix:build
       artifacts: true
   script:
-    - echo "=== Building pkgdown site for GitLab Pages ==="
-    - |
-      nix develop --command bash -c '
-        Rscript -e "pkgdown::build_site(override = list(destination = \"public\"))"
-      '
+    - echo "=== Building pkgdown site via Nix derivation ==="
+    # Use cached pkgdown derivation (rebuilds only if source changed)
+    - nix build .#pkgdown --out-link result-pkgdown
+    - cp -r result-pkgdown public
   artifacts:
     paths:
       - public

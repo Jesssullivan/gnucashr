@@ -7,8 +7,14 @@
   };
 
   nixConfig = {
-    extra-substituters = [ "https://nix-cache.fuzzy-dev.tinyland.dev/main" ];
-    extra-trusted-public-keys = [ "main:PBDvqG8OP3W2XF4QzuqWwZD/RhLRsE7ONxwM09kqTtw=" ];
+    extra-substituters = [
+      "https://nix-cache.fuzzy-dev.tinyland.dev/main"
+      "https://rstats-on-nix.cachix.org"  # Daily R package builds
+    ];
+    extra-trusted-public-keys = [
+      "main:PBDvqG8OP3W2XF4QzuqWwZD/RhLRsE7ONxwM09kqTtw="
+      "rstats-on-nix.cachix.org-1:0sMppRWsYIM1MpuKjSOpgAGbLAwLTSw5G4+gAEc8P4c="
+    ];
   };
 
   outputs = { self, nixpkgs, flake-utils }:
@@ -233,6 +239,52 @@
         '';
 
         packages.default = self.packages.${system}.tarball;
+
+        # Stage 4: Coverage Report (cacheable)
+        # Depends on tarball, runs covr::package_coverage
+        packages.coverage = pkgs.runCommand "gnucashr-coverage-${version}" {
+          buildInputs = [ rWithPackages ] ++ systemDeps;
+          src = self;
+          tarball = self.packages.${system}.tarball;
+          RENV_ACTIVATE_PROJECT = "FALSE";
+        } ''
+          cp -r $src source
+          chmod -R u+w source
+          cd source
+          rm -f .Rprofile
+
+          # Run coverage
+          Rscript -e '
+            cov <- covr::package_coverage(type = "tests", line_exclusions = list("src/RcppExports.cpp"))
+            total_coverage <- covr::percent_coverage(cov)
+            message(sprintf("Total coverage: %.1f%%", total_coverage))
+            covr::to_cobertura(cov, filename = "coverage.xml")
+          '
+
+          mkdir -p $out
+          cp coverage.xml $out/
+          echo "Coverage: $(grep -o 'line-rate="[^"]*"' coverage.xml | head -1)" > $out/summary.txt
+        '';
+
+        # Stage 5: pkgdown Documentation (cacheable)
+        # Builds static documentation site
+        packages.pkgdown = pkgs.runCommand "gnucashr-pkgdown-${version}" {
+          buildInputs = [ rWithPackages ] ++ systemDeps;
+          src = self;
+          tarball = self.packages.${system}.tarball;
+          RENV_ACTIVATE_PROJECT = "FALSE";
+        } ''
+          cp -r $src source
+          chmod -R u+w source
+          cd source
+          rm -f .Rprofile
+
+          # Build pkgdown site
+          Rscript -e 'pkgdown::build_site(override = list(destination = "public"))'
+
+          mkdir -p $out
+          cp -r public/* $out/
+        '';
 
         devShells.default = pkgs.mkShell {
           buildInputs = [ rWithPackages ] ++ systemDeps;
