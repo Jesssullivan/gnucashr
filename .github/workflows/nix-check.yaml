@@ -1,17 +1,14 @@
-# GitHub Actions workflow for Nix-based R CMD check
-# Optional CI using Nix flake for reproducible environment
-# Manual trigger only until proven stable
+# GitHub Actions: Simple Nix R CMD check
+# Lightweight check using Nix flake devShell
+# For full matrix builds, see nix-matrix.yaml
 
 name: nix-check
 
 on:
-  workflow_dispatch:
-    inputs:
-      debug_enabled:
-        type: boolean
-        description: 'Run with debug logging'
-        required: false
-        default: false
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -20,7 +17,7 @@ concurrency:
 jobs:
   nix-check:
     runs-on: ubuntu-latest
-    name: Nix R CMD check
+    name: Nix devtools::check
     timeout-minutes: 30
 
     steps:
@@ -29,10 +26,15 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@v27
         with:
-          nix_path: nixpkgs=channel:nixpkgs-unstable
           extra_nix_config: |
             experimental-features = nix-command flakes
             accept-flake-config = true
+
+      - name: Setup Cachix (rstats-on-nix)
+        uses: cachix/cachix-action@v15
+        with:
+          name: rstats-on-nix
+          skipPush: true
 
       - name: Show Nix version
         run: nix --version
@@ -42,4 +44,4 @@ jobs:
 
       - name: Run R CMD check via Nix
         run: |
-          nix develop -c Rscript -e 'devtools::check(error_on = "error")'
+          nix develop --command Rscript -e 'devtools::check(error_on = "error")'

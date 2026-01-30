@@ -1,0 +1,216 @@
+# GitHub Actions: Nix Matrix Build with Cachix
+# Mirrors GitLab CI with greedy cache push/pull
+#
+# Architecture:
+#   nix-build (matrix) ─┬─> nix-check
+#                       └─> bazel-validation
+#
+# Cache Strategy:
+#   - Cachix: Push on main branch
+#   - rstats-on-nix: Pull R package binaries
+
+name: nix-matrix
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CACHIX_CACHE: rstats-on-nix
+  NIX_CONFIG: |
+    experimental-features = nix-command flakes
+    accept-flake-config = true
+
+jobs:
+  # =============================================================
+  # Matrix build for multiple platforms
+  # =============================================================
+  nix-build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-14]  # x86_64-linux, aarch64-darwin
+        include:
+          - os: ubuntu-latest
+            system: x86_64-linux
+          - os: macos-14
+            system: aarch64-darwin
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            accept-flake-config = true
+
+      - name: Setup Cachix
+        uses: cachix/cachix-action@v15
+        with:
+          name: rstats-on-nix
+          # Push to cache on main branch only
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          skipPush: ${{ github.ref != 'refs/heads/main' }}
+
+      - name: Show Nix info
+        run: |
+          nix --version
+          nix flake show
+
+      - name: Build R dependencies (cached)
+        run: nix build .#rDeps --out-link result-rdeps
+
+      - name: Build C++ objects (cached)
+        run: nix build .#cppBuild --out-link result-cpp
+
+      - name: Build tarball
+        run: |
+          nix build .#tarball --out-link result-tarball
+          VERSION=$(grep "^Version:" DESCRIPTION | cut -d' ' -f2)
+          cp result-tarball gnucashr_${VERSION}.tar.gz
+          ls -la gnucashr_*.tar.gz
+
+      - name: Upload tarball artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tarball-${{ matrix.system }}
+          path: gnucashr_*.tar.gz
+          retention-days: 7
+
+  # =============================================================
+  # R CMD check via Nix
+  # =============================================================
+  nix-check:
+    name: R CMD check (${{ matrix.os }})
+    needs: nix-build
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-14]
+        include:
+          - os: ubuntu-latest
+            system: x86_64-linux
+          - os: macos-14
+            system: aarch64-darwin
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            accept-flake-config = true
+
+      - name: Setup Cachix (pull only)
+        uses: cachix/cachix-action@v15
+        with:
+          name: rstats-on-nix
+          skipPush: true
+
+      - name: Download tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: tarball-${{ matrix.system }}
+
+      - name: Run R CMD check
+        run: |
+          nix build .#checks.${{ matrix.system }}.r-cmd-check --out-link result-check 2>&1 | tail -50
+          ls -la result-check/
+
+      - name: Upload check results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: check-results-${{ matrix.system }}
+          path: result-check/
+          retention-days: 7
+
+  # =============================================================
+  # Bazel validation (Linux only)
+  # =============================================================
+  bazel-validation:
+    name: Bazel validation
+    needs: nix-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            accept-flake-config = true
+
+      - name: Install Bazel via Nix
+        run: nix profile install nixpkgs#bazel_7
+
+      - name: Bazel version
+        run: bazel --version
+
+      - name: Query build graph
+        run: bazel query //... --enable_workspace
+
+  # =============================================================
+  # Coverage (Linux only, main branch)
+  # =============================================================
+  nix-coverage:
+    name: Coverage
+    needs: nix-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v27
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+            accept-flake-config = true
+
+      - name: Setup Cachix (pull only)
+        uses: cachix/cachix-action@v15
+        with:
+          name: rstats-on-nix
+          skipPush: true
+
+      - name: Run coverage
+        run: |
+          nix develop --command bash -c '
+            Rscript -e "
+              cov <- covr::package_coverage(type = \"tests\", line_exclusions = list(\"src/RcppExports.cpp\"))
+              total_coverage <- covr::percent_coverage(cov)
+              message(sprintf(\"Total coverage: %.1f%%\", total_coverage))
+              covr::to_cobertura(cov, filename = \"coverage.xml\")
+            "
+          '
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml
+          fail_ci_if_error: false

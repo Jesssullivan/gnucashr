@@ -1,13 +1,29 @@
 # GitLab CI/CD Pipeline for gnucashr R Package
-# Nix-only pipeline with greedy Attic binary cache
+# Primary CI with Nix + Attic binary cache
 #
-# Architecture:
+# =============================================================
+# CI Parity: GitLab + GitHub Actions
+# =============================================================
+# GitLab CI (this file):
+#   - Nix-based builds with Attic cache (greedy push/pull)
+#   - Platform: x86_64-linux
+#   - Bazel validation
+#
+# GitHub Actions (.github/workflows/):
+#   - nix-matrix.yaml: Multi-platform Nix builds (linux + macOS)
+#   - nix-check.yaml: Simple Nix devtools::check
+#   - R-CMD-check.yaml: r-lib/actions matrix (linux/macOS/windows)
+#
+# =============================================================
+# Architecture
+# =============================================================
 #   nix:build ─┬─> nix:cran-check ─┬─> nix:coverage
 #              │                    └─> pages
 #              └─> bazel:cpp (parallel)
 #
 # Cache Strategy:
 #   - Attic: Greedy push/pull with watch-store mode
+#   - rstats-on-nix Cachix: R package binary cache
 #   - Derivations pushed as they're built (not just at end)
 #   - Downstream jobs immediately benefit from cached artifacts
 
