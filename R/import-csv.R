@@ -569,6 +569,12 @@ import_quickbooks_csv <- function(path, format = c("auto", "qbo", "desktop"),
                                    timezone = Sys.timezone()) {
   format <- match.arg(format)
 
+
+  # Validate timezone - Sys.timezone() can return NA or "" in containers
+  if (is.null(timezone) || is.na(timezone) || !nzchar(timezone)) {
+    timezone <- "UTC"
+  }
+
   if (!file.exists(path)) {
     rlang::abort(paste("QuickBooks CSV file not found:", path))
   }
