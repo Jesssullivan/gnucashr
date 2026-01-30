@@ -1,41 +1,32 @@
 # gnucashr C++ Source BUILD.bazel
 # Fine-grained compilation caching for Rcpp code
+#
+# This provides a Bazel build target for the C++ source files.
+# For full R package builds, use Nix (which provides R and all dependencies).
+# Bazel is used here for fast incremental C++ compilation caching.
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
 # ============================================================
-# C++ Library for Rcpp Code
-# Each .cpp file is compiled independently and cached
+# C++ Library for Rcpp Code (Syntax Check Only)
+# Compiles C++ without R dependencies for fast caching
 # ============================================================
 
 cc_library(
     name = "gnucashr_cpp",
     srcs = glob(
         ["*.cpp"],
-        exclude = ["RcppExports.cpp"],  # Generated file, handled separately
-    ) + ["RcppExports.cpp"],
+        exclude = ["RcppExports.cpp"],  # Depends on Rcpp headers
+    ),
     hdrs = glob(["*.h"]),
     copts = [
         "-std=c++17",
-        "-fopenmp",
         "-fPIC",
         "-DNDEBUG",
-        # Rcpp include paths (resolved at build time)
-        "-I$(location @cran//Rcpp)/include",
-        "-I$(location @cran//RcppParallel)/include",
-        "-I$(location @cran//RcppArmadillo)/include",
+        # Skip actual compilation, just check syntax
+        "-fsyntax-only",
     ],
-    linkopts = [
-        "-fopenmp",
-        "-ltbb",
-    ],
-    deps = [
-        "@cran//Rcpp",
-        "@cran//RcppParallel",
-        "@cran//RcppArmadillo",
-    ],
-    # Enable for R package linking
-    linkstatic = False,
+    # No external dependencies - this is a syntax check target
     visibility = ["//visibility:public"],
 )
 

@@ -1,38 +1,12 @@
 # gnucashr Bazel Workspace Configuration
-# Uses rules_r for R package building with C++ caching
+# C++ compilation caching (R package build done via Nix)
 
 workspace(name = "gnucashr")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 # ============================================================
-# rules_r - R package building rules with C++ caching
-# https://github.com/grailbio/rules_r
-# ============================================================
-
-http_archive(
-    name = "rules_r",
-    sha256 = "a55d9c5b4a1e1c3be3a7ffbf0e4f8fba9fcc40a1e5a51d5faba95f1d4a2d7c5e",
-    strip_prefix = "rules_r-0.16.1",
-    urls = [
-        "https://github.com/grailbio/rules_r/archive/refs/tags/0.16.1.tar.gz",
-    ],
-)
-
-load("@rules_r//R:dependencies.bzl", "r_rules_dependencies")
-r_rules_dependencies()
-
-load("@rules_r//R:repositories.bzl", "r_repository_list")
-r_repository_list(
-    name = "cran",
-    package_list = "//tools:r_packages.csv",
-    remote_repos = {
-        "CRAN": "https://cloud.r-project.org",
-    },
-)
-
-# ============================================================
-# rules_cc - C/C++ rules for Rcpp compilation
+# rules_cc - C/C++ rules for compilation caching
 # ============================================================
 
 http_archive(
@@ -62,3 +36,9 @@ http_archive(
 
 load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 bazel_skylib_workspace()
+
+# ============================================================
+# NOTE: rules_r removed - doesn't support bzlmod well
+# Full R package building is done via Nix flake
+# Bazel is used for C++ compilation caching only
+# ============================================================
