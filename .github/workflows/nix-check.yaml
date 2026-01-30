@@ -1,6 +1,6 @@
 # GitHub Actions: Simple Nix R CMD check
-# Lightweight check using Nix flake devShell
-# For full matrix builds, see nix-matrix.yaml
+# Lightweight check using Nix flake devShell with Attic cache
+# For full builds, see nix-matrix.yaml
 
 name: nix-check
 
@@ -13,6 +13,10 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+env:
+  ATTIC_SERVER: https://nix-cache.fuzzy-dev.tinyland.dev
+  ATTIC_CACHE: main
 
 jobs:
   nix-check:
@@ -30,11 +34,11 @@ jobs:
             experimental-features = nix-command flakes
             accept-flake-config = true
 
-      - name: Setup Cachix (rstats-on-nix)
-        uses: cachix/cachix-action@v15
-        with:
-          name: rstats-on-nix
-          skipPush: true
+      - name: Setup Attic (pull only)
+        run: |
+          nix profile install nixpkgs#attic-client
+          attic login production ${{ env.ATTIC_SERVER }} "${{ secrets.ATTIC_TOKEN }}"
+          attic use ${{ env.ATTIC_CACHE }}
 
       - name: Show Nix version
         run: nix --version

@@ -9,11 +9,9 @@
   nixConfig = {
     extra-substituters = [
       "https://nix-cache.fuzzy-dev.tinyland.dev/main"
-      "https://rstats-on-nix.cachix.org"  # Daily R package builds
     ];
     extra-trusted-public-keys = [
       "main:PBDvqG8OP3W2XF4QzuqWwZD/RhLRsE7ONxwM09kqTtw="
-      "rstats-on-nix.cachix.org-1:0sMppRWsYIM1MpuKjSOpgAGbLAwLTSw5G4+gAEc8P4c="
     ];
   };
 

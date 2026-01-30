@@ -1,13 +1,13 @@
-# GitHub Actions: Nix Matrix Build with Cachix
-# Mirrors GitLab CI with greedy cache push/pull
+# GitHub Actions: Nix Build with Attic Cache
+# Mirrors GitLab CI with greedy cache push/pull pattern
 #
 # Architecture:
-#   nix-build (matrix) ─┬─> nix-check
-#                       └─> bazel-validation
+#   nix-build ─┬─> nix-check
+#              └─> bazel-validation
 #
 # Cache Strategy:
-#   - Cachix: Push on main branch
-#   - rstats-on-nix: Pull R package binaries
+#   - Attic: Pull always, push on main branch only
+#   - Greedy pattern: Push derivations as they complete
 
 name: nix-matrix
 
@@ -23,29 +23,20 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  CACHIX_CACHE: rstats-on-nix
+  ATTIC_SERVER: https://nix-cache.fuzzy-dev.tinyland.dev
+  ATTIC_CACHE: main
   NIX_CONFIG: |
     experimental-features = nix-command flakes
     accept-flake-config = true
 
 jobs:
   # =============================================================
-  # Matrix build for multiple platforms
+  # Primary build with Attic cache integration
   # =============================================================
   nix-build:
-    name: Build (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
+    name: Build (x86_64-linux)
+    runs-on: ubuntu-latest
     timeout-minutes: 45
-
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-14]  # x86_64-linux, aarch64-darwin
-        include:
-          - os: ubuntu-latest
-            system: x86_64-linux
-          - os: macos-14
-            system: aarch64-darwin
 
     env:
       RENV_ACTIVATE_PROJECT: "FALSE"
@@ -63,13 +54,11 @@ jobs:
             experimental-features = nix-command flakes
             accept-flake-config = true
 
-      - name: Setup Cachix
-        uses: cachix/cachix-action@v15
-        with:
-          name: rstats-on-nix
-          # Push to cache on main branch only
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
-          skipPush: ${{ github.ref != 'refs/heads/main' }}
+      - name: Setup Attic
+        run: |
+          nix profile install nixpkgs#attic-client
+          attic login production ${{ env.ATTIC_SERVER }} "${{ secrets.ATTIC_TOKEN }}"
+          attic use ${{ env.ATTIC_CACHE }}
 
       - name: Show Nix info
         run: |
@@ -89,10 +78,15 @@ jobs:
           cp result-tarball gnucashr_${VERSION}.tar.gz
           ls -la gnucashr_*.tar.gz
 
+      - name: Push to Attic cache
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          attic push ${{ env.ATTIC_CACHE }} result-rdeps result-cpp result-tarball || true
+
       - name: Upload tarball artifact
         uses: actions/upload-artifact@v4
         with:
-          name: tarball-${{ matrix.system }}
+          name: tarball-x86_64-linux
           path: gnucashr_*.tar.gz
           retention-days: 7
 
@@ -100,20 +94,10 @@ jobs:
   # R CMD check via Nix
   # =============================================================
   nix-check:
-    name: R CMD check (${{ matrix.os }})
+    name: R CMD check
     needs: nix-build
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     timeout-minutes: 30
-
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-14]
-        include:
-          - os: ubuntu-latest
-            system: x86_64-linux
-          - os: macos-14
-            system: aarch64-darwin
 
     env:
       RENV_ACTIVATE_PROJECT: "FALSE"
@@ -131,32 +115,32 @@ jobs:
             experimental-features = nix-command flakes
             accept-flake-config = true
 
-      - name: Setup Cachix (pull only)
-        uses: cachix/cachix-action@v15
-        with:
-          name: rstats-on-nix
-          skipPush: true
+      - name: Setup Attic (pull only)
+        run: |
+          nix profile install nixpkgs#attic-client
+          attic login production ${{ env.ATTIC_SERVER }} "${{ secrets.ATTIC_TOKEN }}"
+          attic use ${{ env.ATTIC_CACHE }}
 
       - name: Download tarball
         uses: actions/download-artifact@v4
         with:
-          name: tarball-${{ matrix.system }}
+          name: tarball-x86_64-linux
 
       - name: Run R CMD check
         run: |
-          nix build .#checks.${{ matrix.system }}.r-cmd-check --out-link result-check 2>&1 | tail -50
+          nix build .#checks.x86_64-linux.r-cmd-check --out-link result-check 2>&1 | tail -50
           ls -la result-check/
 
       - name: Upload check results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: check-results-${{ matrix.system }}
+          name: check-results-x86_64-linux
           path: result-check/
           retention-days: 7
 
   # =============================================================
-  # Bazel validation (Linux only)
+  # Bazel validation (build graph only)
   # =============================================================
   bazel-validation:
     name: Bazel validation
@@ -184,7 +168,7 @@ jobs:
         run: bazel query //... --enable_workspace
 
   # =============================================================
-  # Coverage (Linux only, main branch)
+  # Coverage (main branch only)
   # =============================================================
   nix-coverage:
     name: Coverage
@@ -209,11 +193,11 @@ jobs:
             experimental-features = nix-command flakes
             accept-flake-config = true
 
-      - name: Setup Cachix (pull only)
-        uses: cachix/cachix-action@v15
-        with:
-          name: rstats-on-nix
-          skipPush: true
+      - name: Setup Attic (pull only)
+        run: |
+          nix profile install nixpkgs#attic-client
+          attic login production ${{ env.ATTIC_SERVER }} "${{ secrets.ATTIC_TOKEN }}"
+          attic use ${{ env.ATTIC_CACHE }}
 
       - name: Run coverage
         run: |
