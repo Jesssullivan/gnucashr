@@ -1,84 +1,23 @@
 # gnucashr C++ Source BUILD.bazel
-# Fine-grained compilation caching for Rcpp code
 #
-# This provides a Bazel build target for the C++ source files.
-# For full R package builds, use Nix (which provides R and all dependencies).
-# Bazel is used here for fast incremental C++ compilation caching.
+# Bazel target for C++ source validation.
+# Full R package builds use Nix (which provides R and all dependencies).
+#
+# NOTE: These files depend on Rcpp headers which aren't available in bare Bazel.
+# This target exists for build graph validation only.
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
-# ============================================================
-# C++ Library for Rcpp Code (Syntax Check Only)
-# Compiles C++ without R dependencies for fast caching
-# ============================================================
-
-cc_library(
-    name = "gnucashr_cpp",
-    srcs = glob(
-        ["*.cpp"],
-        exclude = ["RcppExports.cpp"],  # Depends on Rcpp headers
-    ),
-    hdrs = glob(["*.h"]),
-    copts = [
-        "-std=c++17",
-        "-fPIC",
-        "-DNDEBUG",
-        # Skip actual compilation, just check syntax
-        "-fsyntax-only",
-    ],
-    # No external dependencies - this is a syntax check target
+# C++ source files (for reference/validation)
+# Actual compilation happens via Nix with proper Rcpp headers
+filegroup(
+    name = "cpp_sources",
+    srcs = glob(["*.cpp"]),
     visibility = ["//visibility:public"],
 )
 
-# ============================================================
-# Individual Compilation Units (Maximum Granularity)
-# Uncomment to enable per-file caching for larger codebases
-# ============================================================
-
-# cc_library(
-#     name = "fraction",
-#     srcs = ["fraction.cpp"],
-#     hdrs = glob(["*.h"]),
-#     copts = ["-std=c++17", "-fopenmp", "-fPIC"],
-#     deps = ["@cran//Rcpp", "@cran//RcppArmadillo"],
-# )
-
-# cc_library(
-#     name = "guid",
-#     srcs = ["guid.cpp"],
-#     hdrs = glob(["*.h"]),
-#     copts = ["-std=c++17", "-fopenmp", "-fPIC"],
-#     deps = ["@cran//Rcpp"],
-# )
-
-# cc_library(
-#     name = "monte_carlo",
-#     srcs = ["monte-carlo.cpp"],
-#     hdrs = glob(["*.h"]),
-#     copts = ["-std=c++17", "-fopenmp", "-fPIC"],
-#     deps = ["@cran//Rcpp", "@cran//RcppParallel", "@cran//RcppArmadillo"],
-# )
-
-# cc_library(
-#     name = "parallel_scenarios",
-#     srcs = ["parallel-scenarios.cpp"],
-#     hdrs = glob(["*.h"]),
-#     copts = ["-std=c++17", "-fopenmp", "-fPIC"],
-#     deps = ["@cran//Rcpp", "@cran//RcppParallel"],
-# )
-
-# cc_library(
-#     name = "validation",
-#     srcs = ["validation.cpp"],
-#     hdrs = glob(["*.h"]),
-#     copts = ["-std=c++17", "-fopenmp", "-fPIC"],
-#     deps = ["@cran//Rcpp"],
-# )
-
-# cc_library(
-#     name = "ofx_parser",
-#     srcs = ["ofx-parser.cpp"],
-#     hdrs = glob(["*.h"]),
-#     copts = ["-std=c++17", "-fopenmp", "-fPIC"],
-#     deps = ["@cran//Rcpp"],
-# )
+filegroup(
+    name = "cpp_headers",
+    srcs = glob(["*.h"]),
+    visibility = ["//visibility:public"],
+)

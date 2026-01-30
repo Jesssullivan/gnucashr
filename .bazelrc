@@ -18,27 +18,23 @@ build --linkopt=-fopenmp
 build --linkopt=-ltbb
 
 # ============================================================
-# Remote Caching - BuildBuddy (Free Tier)
-# https://www.buildbuddy.io/
+# Remote Caching - Disabled (anonymous access deprecated)
 # ============================================================
+#
+# BuildBuddy anonymous access is deprecated as of 2026.
+# To enable remote caching, either:
+# 1. Create a BuildBuddy account and set BUILDBUDDY_API_KEY
+# 2. Run a self-hosted bazel-remote instance
+#
+# For now, rely on local Bazel cache only.
+# Full build caching is handled by Nix + Attic.
 
-# Enable remote caching (anonymous, free tier)
-build --remote_cache=grpcs://remote.buildbuddy.io
+# Uncomment to enable BuildBuddy with API key:
+# build --remote_cache=grpcs://remote.buildbuddy.io
+# build --remote_header=x-buildbuddy-api-key=${BUILDBUDDY_API_KEY}
 
-# Build event streaming for insights
-build --bes_results_url=https://app.buildbuddy.io/invocation/
-build --bes_backend=grpcs://remote.buildbuddy.io
-
-# Cache read/write mode (change to --remote_upload_local_results=false for read-only)
-build --remote_upload_local_results=true
-
-# ============================================================
-# Alternative: Self-hosted bazel-remote
-# Uncomment to use self-hosted cache instead of BuildBuddy
-# ============================================================
-
+# Uncomment for self-hosted bazel-remote:
 # build --remote_cache=http://localhost:9090
-# build --remote_upload_local_results=true
 
 # ============================================================
 # CI Configuration

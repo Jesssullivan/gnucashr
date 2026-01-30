@@ -122,21 +122,20 @@ nix:build:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     - if: $CI_COMMIT_TAG
 
-# Bazel build validation (parallel with nix:build)
-# NOTE: Full C++ compilation requires Rcpp headers (provided by Nix)
-# This job validates Bazel configuration and caches what it can
+# Bazel build graph validation (parallel with nix:build)
+# Validates Bazel configuration without attempting C++ compilation
+# (C++ files require Rcpp headers which are provided by Nix, not Bazel)
 bazel:cpp:
   extends: .nix_base
   stage: build
-  timeout: 20m
+  timeout: 10m
   script:
     - echo "=== Bazel configuration validation ==="
     - nix profile install nixpkgs#bazel_7
     - bazel --version
     # Query build graph to validate configuration
-    - bazel query //... --enable_workspace 2>&1 | head -20 || true
-    # Attempt build (may fail due to missing Rcpp headers, that's ok)
-    - bazel build //src:gnucashr_cpp --config=ci --enable_workspace 2>&1 | tail -50 || echo "Build failed (expected without R headers)"
+    - bazel query //... --enable_workspace
+    - echo "=== Build graph validated ==="
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
