@@ -141,7 +141,7 @@
         # Compiles individual .o files that can be reused
         packages.cppBuild = pkgs.stdenv.mkDerivation {
           name = "gnucashr-cpp-${version}";
-          src = ./src;
+          src = ./packages/gnucashr/src;
 
           buildInputs = [ rWithPackages pkgs.tbb ];
           nativeBuildInputs = [ pkgs.gcc ];
@@ -207,7 +207,7 @@
         # Rebuilds quickly using pre-compiled C++ objects
         packages.tarball = pkgs.runCommand "gnucashr-${version}.tar.gz" {
           buildInputs = [ rWithPackages ] ++ systemDeps;
-          src = self;
+          src = ./packages/gnucashr;
           rDeps = self.packages.${system}.rDeps;
           cppObjects = self.packages.${system}.cppBuild;
           # Disable renv auto-activation (we use Nix for dependencies)
@@ -242,7 +242,7 @@
         # Depends on tarball, runs covr::package_coverage
         packages.coverage = pkgs.runCommand "gnucashr-coverage-${version}" {
           buildInputs = [ rWithPackages ] ++ systemDeps;
-          src = self;
+          src = ./packages/gnucashr;
           tarball = self.packages.${system}.tarball;
           RENV_ACTIVATE_PROJECT = "FALSE";
         } ''
@@ -268,7 +268,7 @@
         # Builds static documentation site
         packages.pkgdown = pkgs.runCommand "gnucashr-pkgdown-${version}" {
           buildInputs = [ rWithPackages ] ++ systemDeps;
-          src = self;
+          src = ./packages/gnucashr;
           tarball = self.packages.${system}.tarball;
           RENV_ACTIVATE_PROJECT = "FALSE";
         } ''
@@ -285,22 +285,18 @@
         '';
 
         devShells.default = pkgs.mkShell {
-          buildInputs = [ rWithPackages ] ++ systemDeps;
+          buildInputs = [ rWithPackages ] ++ systemDeps ++ [
+            # Monorepo tooling
+            pkgs.just
+            pkgs.dhall
+            pkgs.dhall-json
+          ];
 
           shellHook = ''
-            echo "gnucashr development environment"
+            echo "gnucashr monorepo development environment"
             echo "R version: $(R --version | head -1)"
             echo ""
-            echo "Available commands:"
-            echo "  R                        - Start R console"
-            echo "  Rscript -e 'devtools::test()'     - Run tests"
-            echo "  Rscript -e 'devtools::check()'    - Run R CMD check"
-            echo "  Rscript -e 'devtools::document()' - Generate documentation"
-            echo ""
-            echo "Cacheable derivations:"
-            echo "  nix build .#rDeps      - Build R dependencies (cached)"
-            echo "  nix build .#cppBuild   - Build C++ objects (cached)"
-            echo "  nix build .#tarball    - Build full package"
+            echo "Quick start: just --list"
             echo ""
           '';
 
@@ -316,7 +312,7 @@
         # R CMD check (full validation) - uses cached components
         checks.r-cmd-check = pkgs.runCommand "gnucashr-r-cmd-check" {
           buildInputs = [ rWithPackages ] ++ systemDeps;
-          src = self;
+          src = ./packages/gnucashr;
           rDeps = self.packages.${system}.rDeps;
           cppObjects = self.packages.${system}.cppBuild;
           NIX_CFLAGS_COMPILE = "-I${pkgs.tbb.dev}/include";

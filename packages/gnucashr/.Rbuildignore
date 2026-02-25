@@ -25,3 +25,9 @@
 ^\.covrignore$
 ^\.env$
 ^\.claude$
+^BUILD\.bazel$
+^justfile$
+^result-.*$
+^\.direnv$
+^\.envrc$
+^src/BUILD\.bazel$

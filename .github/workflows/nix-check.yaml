@@ -47,10 +47,10 @@ jobs:
         run: nix flake show
 
       - name: Remove renv .Rprofile (prevents interference with Nix)
-        run: rm -f .Rprofile
+        run: rm -f packages/gnucashr/.Rprofile
 
       - name: Run R CMD check via Nix
         env:
           RENV_ACTIVATE_PROJECT: "FALSE"
         run: |
-          nix develop --command Rscript -e 'devtools::check(error_on = "error")'
+          cd packages/gnucashr && nix develop ../../ --command Rscript -e 'devtools::check(error_on = "error")'

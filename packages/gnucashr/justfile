@@ -1,0 +1,40 @@
+# gnucashr R package recipes
+# Run from packages/gnucashr/ or via root: just test, just check, etc.
+
+# Run tests
+test:
+    Rscript -e "devtools::test()"
+
+# Run R CMD check
+check:
+    Rscript -e "devtools::check(error_on = 'error')"
+
+# Generate roxygen2 documentation
+document:
+    Rscript -e "devtools::document()"
+
+# Build source tarball
+build:
+    R CMD build .
+
+# Run code coverage
+coverage:
+    Rscript -e "covr::package_coverage(type = 'tests', line_exclusions = list('src/RcppExports.cpp'))"
+
+# Lint R code
+lint:
+    Rscript -e "lintr::lint_package()"
+
+# Full CRAN check
+cran-check: document
+    R CMD build . && R CMD check --as-cran gnucashr_*.tar.gz
+
+# Install package locally
+install:
+    R CMD INSTALL .
+
+# Clean build artifacts
+clean:
+    rm -f gnucashr_*.tar.gz
+    rm -rf gnucashr.Rcheck
+    rm -f src/*.o src/*.so src/*.dll

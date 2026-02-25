@@ -31,6 +31,10 @@ jobs:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       R_KEEP_PKG_SOURCE: yes
 
+    defaults:
+      run:
+        working-directory: packages/gnucashr
+
     steps:
       - uses: actions/checkout@v4
 
@@ -46,6 +50,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           brew install harfbuzz fribidi freetype
+        working-directory: .
 
       # macOS: use base R install.packages to avoid pak binary download failures
       - name: Install dependencies (macOS)
@@ -72,7 +77,8 @@ jobs:
         with:
           extra-packages: any::rcmdcheck
           needs: check
-          cache-version: 7
+          cache-version: 8
+          working-directory: packages/gnucashr
         env:
           PKGCACHE_HTTP_VERSION: 2
           PKGCACHE_TIMEOUT: 600
@@ -83,11 +89,16 @@ jobs:
           args: 'c("--no-manual", "--as-cran")'
           build_args: 'c("--no-manual")'
           error-on: '"warning"'
+          working-directory: packages/gnucashr
 
   test-coverage:
     runs-on: ubuntu-latest
     name: Test coverage
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    defaults:
+      run:
+        working-directory: packages/gnucashr
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
@@ -104,6 +115,7 @@ jobs:
         with:
           extra-packages: any::covr
           needs: coverage
+          working-directory: packages/gnucashr
 
       - name: Test coverage
         run: |
