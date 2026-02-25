@@ -63,16 +63,40 @@ nix-all:
     nix build .#rDeps .#cppBuild .#tarball --max-jobs 4
 
 # ============================================================
-# Bazel
+# C++ Library (lib/gnucash-core)
 # ============================================================
 
-# Validate Bazel build graph
-bazel-query:
-    bazel query //... --enable_workspace
+# Configure C++ library build
+cpp-configure:
+    cd lib/gnucash-core && mkdir -p build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Debug
 
-# Build C++ targets with Bazel
-bazel-build target='//...':
-    bazel build {{ target }}
+# Build C++ library
+cpp-build: cpp-configure
+    cd lib/gnucash-core/build && cmake --build . -j$(nproc)
+
+# Run C++ library tests
+cpp-test: cpp-build
+    cd lib/gnucash-core/build && ctest --output-on-failure
+
+# Clean C++ build artifacts
+cpp-clean:
+    rm -rf lib/gnucash-core/build
+
+# Build C++ library via Nix (hermetic)
+cpp-nix-build:
+    nix build .#gnucashCore
+
+# Run C++ tests via Nix (hermetic)
+cpp-nix-test:
+    nix build .#gnucashCoreTests
+
+# Build JSON bridge via Nix (hermetic)
+cpp-nix-bridge:
+    nix build .#gnucashBridge
+
+# Run JSON bridge interactively (stdin/stdout)
+bridge book:
+    cd lib/gnucash-core/build && ./gnucash-bridge <<< '{"method":"open","params":{"path":"{{book}}"},"id":1}'
 
 # ============================================================
 # Dhall
@@ -127,4 +151,5 @@ clean:
     rm -f packages/gnucashr/gnucashr_*.tar.gz
     rm -rf packages/gnucashr/gnucashr.Rcheck
     rm -rf packages/gnucashr/src/*.o packages/gnucashr/src/*.so packages/gnucashr/src/*.dll
+    rm -rf lib/gnucash-core/build
     rm -f result result-*

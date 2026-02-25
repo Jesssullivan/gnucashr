@@ -61,6 +61,179 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// gc_open
+SEXP gc_open(std::string path, bool read_only);
+RcppExport SEXP _gnucashr_gc_open(SEXP pathSEXP, SEXP read_onlySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type path(pathSEXP);
+    Rcpp::traits::input_parameter< bool >::type read_only(read_onlySEXP);
+    rcpp_result_gen = Rcpp::wrap(gc_open(path, read_only));
+    return rcpp_result_gen;
+END_RCPP
+}
+// gc_close
+void gc_close(SEXP book_ptr);
+RcppExport SEXP _gnucashr_gc_close(SEXP book_ptrSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type book_ptr(book_ptrSEXP);
+    gc_close(book_ptr);
+    return R_NilValue;
+END_RCPP
+}
+// gc_info
+List gc_info(SEXP book_ptr);
+RcppExport SEXP _gnucashr_gc_info(SEXP book_ptrSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type book_ptr(book_ptrSEXP);
+    rcpp_result_gen = Rcpp::wrap(gc_info(book_ptr));
+    return rcpp_result_gen;
+END_RCPP
+}
+// gc_get_accounts
+DataFrame gc_get_accounts(SEXP book_ptr);
+RcppExport SEXP _gnucashr_gc_get_accounts(SEXP book_ptrSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type book_ptr(book_ptrSEXP);
+    rcpp_result_gen = Rcpp::wrap(gc_get_accounts(book_ptr));
+    return rcpp_result_gen;
+END_RCPP
+}
+// gc_account_tree
+DataFrame gc_account_tree(SEXP book_ptr);
+RcppExport SEXP _gnucashr_gc_account_tree(SEXP book_ptrSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type book_ptr(book_ptrSEXP);
+    rcpp_result_gen = Rcpp::wrap(gc_account_tree(book_ptr));
+    return rcpp_result_gen;
+END_RCPP
+}
+// gc_get_account
+DataFrame gc_get_account(SEXP book_ptr, std::string guid);
+RcppExport SEXP _gnucashr_gc_get_account(SEXP book_ptrSEXP, SEXP guidSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type book_ptr(book_ptrSEXP);
+    Rcpp::traits::input_parameter< std::string >::type guid(guidSEXP);
+    rcpp_result_gen = Rcpp::wrap(gc_get_account(book_ptr, guid));
+    return rcpp_result_gen;
+END_RCPP
+}
+// gc_get_account_by_path
+DataFrame gc_get_account_by_path(SEXP book_ptr, std::string path);
+RcppExport SEXP _gnucashr_gc_get_account_by_path(SEXP book_ptrSEXP, SEXP pathSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type book_ptr(book_ptrSEXP);
+    Rcpp::traits::input_parameter< std::string >::type path(pathSEXP);
+    rcpp_result_gen = Rcpp::wrap(gc_get_account_by_path(book_ptr, path));
+    return rcpp_result_gen;
+END_RCPP
+}
+// gc_get_transactions
+DataFrame gc_get_transactions(SEXP book_ptr, Nullable<std::string> from_date, Nullable<std::string> to_date);
+RcppExport SEXP _gnucashr_gc_get_transactions(SEXP book_ptrSEXP, SEXP from_dateSEXP, SEXP to_dateSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type book_ptr(book_ptrSEXP);
+    Rcpp::traits::input_parameter< Nullable<std::string> >::type from_date(from_dateSEXP);
+    Rcpp::traits::input_parameter< Nullable<std::string> >::type to_date(to_dateSEXP);
+    rcpp_result_gen = Rcpp::wrap(gc_get_transactions(book_ptr, from_date, to_date));
+    return rcpp_result_gen;
+END_RCPP
+}
+// gc_get_balance
+double gc_get_balance(SEXP book_ptr, std::string account_guid, Nullable<std::string> as_of);
+RcppExport SEXP _gnucashr_gc_get_balance(SEXP book_ptrSEXP, SEXP account_guidSEXP, SEXP as_ofSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type book_ptr(book_ptrSEXP);
+    Rcpp::traits::input_parameter< std::string >::type account_guid(account_guidSEXP);
+    Rcpp::traits::input_parameter< Nullable<std::string> >::type as_of(as_ofSEXP);
+    rcpp_result_gen = Rcpp::wrap(gc_get_balance(book_ptr, account_guid, as_of));
+    return rcpp_result_gen;
+END_RCPP
+}
+// gc_trial_balance
+DataFrame gc_trial_balance(SEXP book_ptr, Nullable<std::string> as_of);
+RcppExport SEXP _gnucashr_gc_trial_balance(SEXP book_ptrSEXP, SEXP as_ofSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type book_ptr(book_ptrSEXP);
+    Rcpp::traits::input_parameter< Nullable<std::string> >::type as_of(as_ofSEXP);
+    rcpp_result_gen = Rcpp::wrap(gc_trial_balance(book_ptr, as_of));
+    return rcpp_result_gen;
+END_RCPP
+}
+// gc_create_account
+std::string gc_create_account(SEXP book_ptr, std::string name, std::string type, std::string parent_guid, std::string description, std::string code, bool hidden, bool placeholder);
+RcppExport SEXP _gnucashr_gc_create_account(SEXP book_ptrSEXP, SEXP nameSEXP, SEXP typeSEXP, SEXP parent_guidSEXP, SEXP descriptionSEXP, SEXP codeSEXP, SEXP hiddenSEXP, SEXP placeholderSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type book_ptr(book_ptrSEXP);
+    Rcpp::traits::input_parameter< std::string >::type name(nameSEXP);
+    Rcpp::traits::input_parameter< std::string >::type type(typeSEXP);
+    Rcpp::traits::input_parameter< std::string >::type parent_guid(parent_guidSEXP);
+    Rcpp::traits::input_parameter< std::string >::type description(descriptionSEXP);
+    Rcpp::traits::input_parameter< std::string >::type code(codeSEXP);
+    Rcpp::traits::input_parameter< bool >::type hidden(hiddenSEXP);
+    Rcpp::traits::input_parameter< bool >::type placeholder(placeholderSEXP);
+    rcpp_result_gen = Rcpp::wrap(gc_create_account(book_ptr, name, type, parent_guid, description, code, hidden, placeholder));
+    return rcpp_result_gen;
+END_RCPP
+}
+// gc_post_transaction
+std::string gc_post_transaction(SEXP book_ptr, std::string description, std::string post_date, DataFrame splits_df, std::string num);
+RcppExport SEXP _gnucashr_gc_post_transaction(SEXP book_ptrSEXP, SEXP descriptionSEXP, SEXP post_dateSEXP, SEXP splits_dfSEXP, SEXP numSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type book_ptr(book_ptrSEXP);
+    Rcpp::traits::input_parameter< std::string >::type description(descriptionSEXP);
+    Rcpp::traits::input_parameter< std::string >::type post_date(post_dateSEXP);
+    Rcpp::traits::input_parameter< DataFrame >::type splits_df(splits_dfSEXP);
+    Rcpp::traits::input_parameter< std::string >::type num(numSEXP);
+    rcpp_result_gen = Rcpp::wrap(gc_post_transaction(book_ptr, description, post_date, splits_df, num));
+    return rcpp_result_gen;
+END_RCPP
+}
+// gc_delete_transaction
+void gc_delete_transaction(SEXP book_ptr, std::string guid);
+RcppExport SEXP _gnucashr_gc_delete_transaction(SEXP book_ptrSEXP, SEXP guidSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type book_ptr(book_ptrSEXP);
+    Rcpp::traits::input_parameter< std::string >::type guid(guidSEXP);
+    gc_delete_transaction(book_ptr, guid);
+    return R_NilValue;
+END_RCPP
+}
+// gc_void_transaction
+void gc_void_transaction(SEXP book_ptr, std::string guid, std::string reason);
+RcppExport SEXP _gnucashr_gc_void_transaction(SEXP book_ptrSEXP, SEXP guidSEXP, SEXP reasonSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type book_ptr(book_ptrSEXP);
+    Rcpp::traits::input_parameter< std::string >::type guid(guidSEXP);
+    Rcpp::traits::input_parameter< std::string >::type reason(reasonSEXP);
+    gc_void_transaction(book_ptr, guid, reason);
+    return R_NilValue;
+END_RCPP
+}
 // generate_guid
 String generate_guid();
 RcppExport SEXP _gnucashr_generate_guid() {
@@ -284,6 +457,20 @@ static const R_CallMethodDef CallEntries[] = {
     {"_gnucashr_double_to_fraction", (DL_FUNC) &_gnucashr_double_to_fraction, 2},
     {"_gnucashr_add_fractions", (DL_FUNC) &_gnucashr_add_fractions, 4},
     {"_gnucashr_validate_splits_balance", (DL_FUNC) &_gnucashr_validate_splits_balance, 2},
+    {"_gnucashr_gc_open", (DL_FUNC) &_gnucashr_gc_open, 2},
+    {"_gnucashr_gc_close", (DL_FUNC) &_gnucashr_gc_close, 1},
+    {"_gnucashr_gc_info", (DL_FUNC) &_gnucashr_gc_info, 1},
+    {"_gnucashr_gc_get_accounts", (DL_FUNC) &_gnucashr_gc_get_accounts, 1},
+    {"_gnucashr_gc_account_tree", (DL_FUNC) &_gnucashr_gc_account_tree, 1},
+    {"_gnucashr_gc_get_account", (DL_FUNC) &_gnucashr_gc_get_account, 2},
+    {"_gnucashr_gc_get_account_by_path", (DL_FUNC) &_gnucashr_gc_get_account_by_path, 2},
+    {"_gnucashr_gc_get_transactions", (DL_FUNC) &_gnucashr_gc_get_transactions, 3},
+    {"_gnucashr_gc_get_balance", (DL_FUNC) &_gnucashr_gc_get_balance, 3},
+    {"_gnucashr_gc_trial_balance", (DL_FUNC) &_gnucashr_gc_trial_balance, 2},
+    {"_gnucashr_gc_create_account", (DL_FUNC) &_gnucashr_gc_create_account, 8},
+    {"_gnucashr_gc_post_transaction", (DL_FUNC) &_gnucashr_gc_post_transaction, 5},
+    {"_gnucashr_gc_delete_transaction", (DL_FUNC) &_gnucashr_gc_delete_transaction, 2},
+    {"_gnucashr_gc_void_transaction", (DL_FUNC) &_gnucashr_gc_void_transaction, 3},
     {"_gnucashr_generate_guid", (DL_FUNC) &_gnucashr_generate_guid, 0},
     {"_gnucashr_validate_guid", (DL_FUNC) &_gnucashr_validate_guid, 1},
     {"_gnucashr_generate_guids", (DL_FUNC) &_gnucashr_generate_guids, 1},

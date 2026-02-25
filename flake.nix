@@ -284,12 +284,93 @@
           cp -r public/* $out/
         '';
 
+        # Stage 6: gnucash-core C++ library (standalone, no R dependency)
+        packages.gnucashCore = pkgs.stdenv.mkDerivation {
+          pname = "gnucash-core";
+          inherit version;
+          src = ./lib/gnucash-core;
+
+          nativeBuildInputs = [ pkgs.cmake pkgs.pkg-config ];
+          buildInputs = [ pkgs.sqlite pkgs.nlohmann_json ];
+
+          cmakeFlags = [
+            "-DGNUCASH_CORE_BUILD_TESTS=OFF"
+          ];
+
+          meta = {
+            description = "Standalone C++ library for GnuCash SQLite database operations";
+          };
+        };
+
+        # Stage 6b: gnucash-bridge JSON API executable
+        packages.gnucashBridge = pkgs.stdenv.mkDerivation {
+          pname = "gnucash-bridge";
+          inherit version;
+          src = ./lib/gnucash-core;
+
+          nativeBuildInputs = [ pkgs.cmake pkgs.pkg-config ];
+          buildInputs = [ pkgs.sqlite pkgs.nlohmann_json ];
+
+          cmakeFlags = [
+            "-DGNUCASH_CORE_BUILD_TESTS=OFF"
+            "-DGNUCASH_CORE_BUILD_BRIDGE=ON"
+          ];
+
+          installPhase = ''
+            mkdir -p $out/bin
+            cp gnucash-bridge $out/bin/
+          '';
+
+          meta = {
+            description = "JSON API bridge for GnuCash SQLite database operations";
+          };
+        };
+
+        # Stage 8: gnucash-core test runner
+        packages.gnucashCoreTests = pkgs.stdenv.mkDerivation {
+          pname = "gnucash-core-tests";
+          inherit version;
+          src = ./lib/gnucash-core;
+
+          nativeBuildInputs = [ pkgs.cmake pkgs.pkg-config ];
+          buildInputs = [ pkgs.sqlite pkgs.nlohmann_json ];
+
+          cmakeFlags = [
+            "-DGNUCASH_CORE_BUILD_TESTS=ON"
+          ];
+
+          # Copy fixture databases for testing
+          postPatch = ''
+            cp ${./packages/gnucashr/tests/testthat/fixtures/databases/minimal.gnucash} test/fixtures/minimal.gnucash
+            cp ${./packages/gnucashr/tests/testthat/fixtures/databases/with-accounts.gnucash} test/fixtures/with-accounts.gnucash
+          '';
+
+          installPhase = ''
+            mkdir -p $out/bin
+            cp gnucash-core-tests $out/bin/
+          '';
+
+          doCheck = true;
+          checkPhase = ''
+            ctest --output-on-failure
+          '';
+
+          meta = {
+            description = "Tests for gnucash-core C++ library";
+          };
+        };
+
         devShells.default = pkgs.mkShell {
           buildInputs = [ rWithPackages ] ++ systemDeps ++ [
             # Monorepo tooling
             pkgs.just
             pkgs.dhall
             pkgs.dhall-json
+
+            # C++ library build tools
+            pkgs.cmake
+            pkgs.catch2_3
+            pkgs.nlohmann_json
           ];
 
           shellHook = ''

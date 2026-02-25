@@ -55,6 +55,154 @@ validate_splits_balance <- function(numerators, denominators) {
     .Call(`_gnucashr_validate_splits_balance`, numerators, denominators)
 }
 
+#' Open a GnuCash SQLite Database (C++ Backend)
+#'
+#' Opens a GnuCash SQLite database file using the native C++ library,
+#' returning an external pointer handle for subsequent operations.
+#'
+#' @param path Path to .gnucash SQLite database file
+#' @param read_only Open in read-only mode (default TRUE)
+#' @return External pointer to Book object
+#' @export
+gc_open <- function(path, read_only = TRUE) {
+    .Call(`_gnucashr_gc_open`, path, read_only)
+}
+
+#' Close a GnuCash Database Handle
+#'
+#' @param book_ptr External pointer from gc_open()
+#' @export
+gc_close <- function(book_ptr) {
+    invisible(.Call(`_gnucashr_gc_close`, book_ptr))
+}
+
+#' Get Book Metadata
+#'
+#' @param book_ptr External pointer from gc_open()
+#' @return Named list with book_guid, root_account_guid, default_currency, read_only
+#' @export
+gc_info <- function(book_ptr) {
+    .Call(`_gnucashr_gc_info`, book_ptr)
+}
+
+#' Get All Accounts (C++ Backend)
+#'
+#' @param book_ptr External pointer from gc_open()
+#' @return Data frame of accounts
+#' @export
+gc_get_accounts <- function(book_ptr) {
+    .Call(`_gnucashr_gc_get_accounts`, book_ptr)
+}
+
+#' Get Account Tree with Full Paths (C++ Backend)
+#'
+#' @param book_ptr External pointer from gc_open()
+#' @return Data frame of accounts with full_path populated
+#' @export
+gc_account_tree <- function(book_ptr) {
+    .Call(`_gnucashr_gc_account_tree`, book_ptr)
+}
+
+#' Get Account by GUID (C++ Backend)
+#'
+#' @param book_ptr External pointer from gc_open()
+#' @param guid Account GUID
+#' @return Data frame with single account row, or empty data frame if not found
+#' @export
+gc_get_account <- function(book_ptr, guid) {
+    .Call(`_gnucashr_gc_get_account`, book_ptr, guid)
+}
+
+#' Get Account by Path (C++ Backend)
+#'
+#' @param book_ptr External pointer from gc_open()
+#' @param path Colon-separated account path
+#' @return Data frame with single account row, or empty data frame if not found
+#' @export
+gc_get_account_by_path <- function(book_ptr, path) {
+    .Call(`_gnucashr_gc_get_account_by_path`, book_ptr, path)
+}
+
+#' Get Transactions (C++ Backend)
+#'
+#' @param book_ptr External pointer from gc_open()
+#' @param from_date Optional start date filter (YYYY-MM-DD)
+#' @param to_date Optional end date filter (YYYY-MM-DD)
+#' @return Data frame of transactions with splits
+#' @export
+gc_get_transactions <- function(book_ptr, from_date = NULL, to_date = NULL) {
+    .Call(`_gnucashr_gc_get_transactions`, book_ptr, from_date, to_date)
+}
+
+#' Get Account Balance (C++ Backend)
+#'
+#' @param book_ptr External pointer from gc_open()
+#' @param account_guid Account GUID
+#' @param as_of Optional date for point-in-time balance
+#' @return Numeric balance value
+#' @export
+gc_get_balance <- function(book_ptr, account_guid, as_of = NULL) {
+    .Call(`_gnucashr_gc_get_balance`, book_ptr, account_guid, as_of)
+}
+
+#' Get Trial Balance (C++ Backend)
+#'
+#' @param book_ptr External pointer from gc_open()
+#' @param as_of Optional date for point-in-time trial balance
+#' @return Data frame with account_guid, account_name, full_path, account_type, balance
+#' @export
+gc_trial_balance <- function(book_ptr, as_of = NULL) {
+    .Call(`_gnucashr_gc_trial_balance`, book_ptr, as_of)
+}
+
+#' Create Account (C++ Backend)
+#'
+#' @param book_ptr External pointer from gc_open() (must be read-write)
+#' @param name Account name
+#' @param type Account type string (e.g., "EXPENSE", "BANK")
+#' @param parent_guid Parent account GUID
+#' @param description Optional description
+#' @param code Optional account code
+#' @param hidden Whether account is hidden
+#' @param placeholder Whether account is a placeholder
+#' @return GUID of created account
+#' @export
+gc_create_account <- function(book_ptr, name, type, parent_guid, description = "", code = "", hidden = FALSE, placeholder = FALSE) {
+    .Call(`_gnucashr_gc_create_account`, book_ptr, name, type, parent_guid, description, code, hidden, placeholder)
+}
+
+#' Post Transaction (C++ Backend)
+#'
+#' @param book_ptr External pointer from gc_open() (must be read-write)
+#' @param description Transaction description
+#' @param post_date Post date (YYYY-MM-DD HH:MM:SS)
+#' @param splits_df Data frame with columns: account_guid, value_num, value_denom
+#' @param num Optional transaction number
+#' @return GUID of created transaction
+#' @export
+gc_post_transaction <- function(book_ptr, description, post_date, splits_df, num = "") {
+    .Call(`_gnucashr_gc_post_transaction`, book_ptr, description, post_date, splits_df, num)
+}
+
+#' Delete Transaction (C++ Backend)
+#'
+#' @param book_ptr External pointer from gc_open() (must be read-write)
+#' @param guid Transaction GUID
+#' @export
+gc_delete_transaction <- function(book_ptr, guid) {
+    invisible(.Call(`_gnucashr_gc_delete_transaction`, book_ptr, guid))
+}
+
+#' Void Transaction (C++ Backend)
+#'
+#' @param book_ptr External pointer from gc_open() (must be read-write)
+#' @param guid Transaction GUID
+#' @param reason Void reason
+#' @export
+gc_void_transaction <- function(book_ptr, guid, reason) {
+    invisible(.Call(`_gnucashr_gc_void_transaction`, book_ptr, guid, reason))
+}
+
 #' Generate GnuCash-Format GUID
 #'
 #' Generate a random 32-character hex GUID in GnuCash format.

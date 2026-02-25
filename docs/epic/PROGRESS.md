@@ -5,7 +5,7 @@
 
 ---
 
-## Phase 1: Foundation (Weeks 1-2) -- IN PROGRESS
+## Phase 1: Foundation (Weeks 1-2) -- COMPLETE
 
 ### Week 1: Monorepo Restructure -- COMPLETE
 - [x] 1.1 Move R package into packages/gnucashr/
@@ -31,40 +31,46 @@
 
 ---
 
-## Phase 2: GnuCash Interface (Weeks 3-4) -- NOT STARTED
+## Phase 2: GnuCash Interface (Weeks 3-4) -- COMPLETE
 
-### Week 3: Standalone C++ Library
-- [ ] 3.1 Design lib/gnucash-core/ C++ library
-- [ ] 3.2 Implement GnuCash SQLite schema reader
-- [ ] 3.3 Implement Result<T,E> in C++
-- [ ] 3.4 C++ test suite with Catch2
-- [ ] 3.5 Nix derivation for C++ library
+### Week 3: Standalone C++ Library -- COMPLETE
+- [x] 3.1 Design lib/gnucash-core/ C++ library (headers: result.h, fraction.h, guid.h, types.h, book.h)
+- [x] 3.2 Implement GnuCash SQLite schema reader (book.cpp: ~725 lines, all CRUD)
+- [x] 3.3 Implement Result<T,E> in C++ (with void specialization, map, bind, match)
+- [x] 3.4 C++ test suite with Catch2 (5 test files: result, fraction, guid, types, book)
+- [x] 3.5 Nix derivation for C++ library (packages.gnucashCore, packages.gnucashCoreTests)
+- [x] 3.6 CMakeLists.txt build system (cmake + pkg-config + Catch2)
+- [x] 3.7 Justfile C++ recipes (cpp-configure, cpp-build, cpp-test, cpp-clean, cpp-nix-*)
 
 ### Week 4: Enhanced Write Operations
-- [ ] 4.1 Transaction posting in C++ lib
-- [ ] 4.2 Account creation in C++ lib
-- [ ] 4.3 JSON API for C++ lib (agent bridge)
-- [ ] 4.4 Wire C++ lib back into R package via Rcpp
-- [ ] 4.5 OFX import in C++ lib
-- [ ] 4.6 Dhall schema for GnuCash operations
+- [x] 4.1 Transaction posting in C++ lib (book.cpp: post_transaction with validation)
+- [x] 4.2 Account creation in C++ lib (book.cpp: create_account with validation)
+- [x] 4.3 JSON API for C++ lib (gnucash-bridge: 18 methods, stdin/stdout JSON-lines)
+- [x] 4.4 Wire C++ lib back into R package via Rcpp (gc_* functions, vendored sources)
+- [x] 4.5 OFX import in C++ lib (ofx.h/ofx.cpp, v1 SGML + v2 XML, 8 tests)
+- [x] 4.6 Dhall schema for GnuCash operations (GnuCashOperation.dhall, 14 ops, 6 types)
 
-### Gate G2: [ ] PENDING
-- [ ] C++ lib reads GnuCash SQLite without R
-- [ ] C++ lib writes transactions GnuCash opens
-- [ ] JSON API works via stdin/stdout
-- [ ] R package still passes check
-- [ ] C++ test suite passes
+### Gate G2: [x] PASSED
+- [x] C++ lib reads GnuCash SQLite without R
+- [x] C++ lib writes transactions GnuCash opens
+- [x] JSON API works via stdin/stdout (gnucash-bridge, 18 methods)
+- [x] R package still passes check (586/586 tests, 0 failures)
+- [x] C++ test suite passes (91/91 tests, 0.36s)
 
 ---
 
 ## Phase 3: Agent Framework (Weeks 5-6) -- NOT STARTED
 
 ### Week 5: Agent Framework + MCP Server
-- [ ] 5.1 MCP server wrapping gnucash-core
-- [ ] 5.2 Agent loop architecture
-- [ ] 5.3 Audit trail system
-- [ ] 5.4 Dhall agent configuration
-- [ ] 5.5 Agent state management
+**Detailed Plan**: See `docs/epic/05-WEEK5-PLAN.md` (7-day implementation guide)
+
+- [ ] 5.1 JSON-RPC 2.0 protocol layer (extend gnucash-bridge with MCP support)
+- [ ] 5.2 MCP tool schema (19 tools mapped from gnucash-bridge methods)
+- [ ] 5.3 Audit trail system (Aperture-compatible SQLite schema)
+- [ ] 5.4 Dhall agent configurations (3 example agents: spend-monitor, report-generator, transaction-categorizer)
+- [ ] 5.5 Tool filtering via Dhall
+- [ ] 5.6 Integration testing with Claude Code
+- [ ] 5.7 Documentation (MCP_ARCHITECTURE.md, AGENT_DEVELOPMENT_GUIDE.md)
 
 ### Week 6: First Three Agents
 - [ ] 6.1 spend-monitor agent
@@ -115,12 +121,12 @@
 |--------|--------|---------|--------|
 | R CMD check | 0 ERR, 0 WARN | 0 ERR, 3 WARN, 3 NOTE | Passing |
 | Test count (R) | 21 files, 4692 lines | 21/4692 | Baseline |
-| Test count (C++) | 50+ tests | 0 | Not started |
+| Test count (C++) | 50+ tests | 91 | All passing |
 | Agent count | 7 | 0 | Not started |
-| Dhall configs | All compile | 12 files | All pass |
+| Dhall configs | All compile | 13 files | All pass |
 | Code coverage | >80% | ~80% (R only) | Baseline |
 | GnuCash schema tables mapped | 10+ | 6 (via R) | Partial |
-| Justfile recipes | 20+ | 18 | Root complete |
+| Justfile recipes | 20+ | 26 | Root + package |
 | CI pipelines green | Both platforms | Yes (current layout) | Baseline |
 
 ---
@@ -132,6 +138,15 @@
 | 2026-02-24 | Epic created | Vision for agentic financial management on GnuCash |
 | 2026-02-24 | gnucash-mcp forked, will supersede | Rudimentary Python MCP; C++ MCP in Week 5 |
 | 2026-02-24 | Week 1 complete | Monorepo restructure, CI, Justfile all verified |
+| 2026-02-24 | Week 2 complete | Dhall bootstrap, 12 config files, templates |
+| 2026-02-25 | gnucash-core library built | 65/65 Catch2 tests passing, full CRUD ops |
+| 2026-02-25 | Result<T,E> uses optional | std::variant fails with T==E and non-default-constructible T |
+| 2026-02-25 | gnucash-bridge JSON API | stdin/stdout JSON-lines, 18 methods, nlohmann_json |
+| 2026-02-25 | R package wired to gnucash-core | Vendored sources, 14 gc_* Rcpp exports, 586 R tests pass |
+| 2026-02-25 | OFX parser standalone | Extracted from R Rcpp, handles v1 SGML + v2 XML, 8 Catch2 tests |
+| 2026-02-25 | GnuCashOperation Dhall type | 14 operations, 6 sub-types, maps to JSON API methods |
+| 2026-02-25 | Phase 2 complete | 91 C++ tests, 586 R tests, all gates passed |
+| 2026-02-25 | Week 5 plan created | MCP server C++ implementation, Aperture-ready audit, 7-day timeline |
 
 ---
 
