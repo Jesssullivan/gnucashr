@@ -29,6 +29,7 @@ add_library(gnucash-core
     src/types.cpp
     src/book.cpp
     src/ofx.cpp
+    src/audit.cpp
 )
 
 target_include_directories(gnucash-core

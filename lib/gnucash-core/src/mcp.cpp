@@ -1,9 +1,21 @@
 #include "gnucash/mcp.h"
+#include "gnucash/audit.h"
 #include "json_api.h"
 #include <iostream>
+#include <chrono>
 
 namespace gnucash {
 namespace mcp {
+
+// ========================================================================
+// Global State
+// ========================================================================
+
+// Audit logger (initialized when book is opened)
+static std::optional<audit::AuditLogger> g_audit_logger;
+
+// Current book path (for audit logging)
+static std::string g_book_path;
 
 // ========================================================================
 // Protocol Detection
@@ -113,6 +125,48 @@ json handle_tools_call(const json& params, const json& id) {
     std::string tool_name = params["name"];
     json arguments = params["arguments"];
 
+    // Start timing
+    auto start_time = std::chrono::steady_clock::now();
+
+    // Initialize audit record
+    audit::AuditRecord audit_record;
+    audit_record.timestamp = audit::now_iso8601();
+    audit_record.tool_name = tool_name;
+    audit_record.arguments = arguments;
+    audit_record.book_path = g_book_path;
+    if (!id.is_null() && id.is_string()) {
+        audit_record.request_id = id.get<std::string>();
+    } else if (!id.is_null() && id.is_number()) {
+        audit_record.request_id = std::to_string(id.get<int>());
+    }
+
+    // Classify operation (write operations)
+    bool is_write = (tool_name == "gnucash_create_account" ||
+                     tool_name == "gnucash_post_transaction" ||
+                     tool_name == "gnucash_delete_transaction" ||
+                     tool_name == "gnucash_void_transaction");
+
+    audit_record.classification = is_write ?
+        audit::Classification::WRITE : audit::Classification::READ;
+
+    // Determine operation type and entity type for write operations
+    if (tool_name == "gnucash_create_account") {
+        audit_record.operation = audit::Operation::CREATE;
+        audit_record.entity_type = audit::EntityType::ACCOUNT;
+    } else if (tool_name == "gnucash_post_transaction") {
+        audit_record.operation = audit::Operation::CREATE;
+        audit_record.entity_type = audit::EntityType::TRANSACTION;
+    } else if (tool_name == "gnucash_delete_transaction") {
+        audit_record.operation = audit::Operation::DELETE;
+        audit_record.entity_type = audit::EntityType::TRANSACTION;
+    } else if (tool_name == "gnucash_void_transaction") {
+        audit_record.operation = audit::Operation::VOID;
+        audit_record.entity_type = audit::EntityType::TRANSACTION;
+    } else {
+        audit_record.operation = audit::Operation::NONE;
+        audit_record.entity_type = audit::EntityType::NONE;
+    }
+
     // Map MCP tool names to legacy method names
     // MCP: "gnucash_open" → Legacy: "open"
     std::string method_name = tool_name;
@@ -120,6 +174,99 @@ json handle_tools_call(const json& params, const json& id) {
     if (tool_name.size() >= prefix.size() &&
         tool_name.compare(0, prefix.size(), prefix) == 0) {
         method_name = tool_name.substr(prefix.size());  // Remove "gnucash_" prefix
+    }
+
+    // Special handling for open command - initialize audit logger
+    if (method_name == "open" && arguments.contains("path")) {
+        g_book_path = arguments["path"].get<std::string>();
+        auto logger_result = audit::AuditLogger::open(g_book_path);
+        if (logger_result.is_ok()) {
+            g_audit_logger = std::move(logger_result.unwrap());
+        }
+        audit_record.book_path = g_book_path;
+    }
+
+    // Special handling for audit_log query
+    if (tool_name == "gnucash_audit_log") {
+        if (!g_audit_logger) {
+            audit_record.result_status = audit::ResultStatus::ERROR;
+            audit_record.error_message = "no book open";
+            return make_jsonrpc_error(error_codes::INTERNAL_ERROR,
+                "no book open", id);
+        }
+
+        // Build query filters
+        audit::AuditLogger::QueryFilters filters;
+        if (arguments.contains("since"))
+            filters.since = arguments["since"].get<std::string>();
+        if (arguments.contains("until"))
+            filters.until = arguments["until"].get<std::string>();
+        if (arguments.contains("tool_name"))
+            filters.tool_name = arguments["tool_name"].get<std::string>();
+        if (arguments.contains("classification")) {
+            std::string cls = arguments["classification"].get<std::string>();
+            filters.classification = audit::parse_classification(cls);
+        }
+        if (arguments.contains("user_email"))
+            filters.user_email = arguments["user_email"].get<std::string>();
+        if (arguments.contains("entity_guid"))
+            filters.entity_guid = arguments["entity_guid"].get<std::string>();
+        if (arguments.contains("limit"))
+            filters.limit = arguments["limit"].get<int>();
+
+        // Query audit log
+        auto query_result = g_audit_logger->query(filters);
+
+        // Calculate duration
+        auto end_time = std::chrono::steady_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+            end_time - start_time);
+        audit_record.duration_ms = static_cast<int>(duration.count());
+
+        if (query_result.is_err()) {
+            audit_record.result_status = audit::ResultStatus::ERROR;
+            audit_record.error_message = query_result.unwrap_err();
+            g_audit_logger->log(audit_record);
+            return make_jsonrpc_error(error_codes::INTERNAL_ERROR,
+                query_result.unwrap_err(), id);
+        }
+
+        // Format results
+        auto records = query_result.unwrap();
+        std::ostringstream output;
+        output << "Audit Log (" << records.size() << " records)\n\n";
+
+        for (const auto& rec : records) {
+            output << rec.timestamp << "  ["
+                   << audit::classification_to_string(rec.classification) << "]  "
+                   << rec.tool_name << "\n";
+
+            if (rec.user_email)
+                output << "  user: " << *rec.user_email << "\n";
+            if (rec.entity_guid)
+                output << "  entity: " << *rec.entity_guid << " ("
+                       << audit::entity_type_to_string(rec.entity_type) << ")\n";
+            if (rec.error_message)
+                output << "  ERROR: " << *rec.error_message << "\n";
+            if (rec.duration_ms)
+                output << "  duration: " << *rec.duration_ms << "ms\n";
+
+            output << "\n";
+        }
+
+        audit_record.result_status = audit::ResultStatus::SUCCESS;
+        g_audit_logger->log(audit_record);
+
+        json mcp_result = {
+            {"content", json::array({
+                {
+                    {"type", "text"},
+                    {"text", output.str()}
+                }
+            })}
+        };
+
+        return make_jsonrpc_result(mcp_result, id);
     }
 
     // Build legacy JSON request
@@ -132,17 +279,45 @@ json handle_tools_call(const json& params, const json& id) {
     // Dispatch to legacy handler (from json_api.cpp)
     json legacy_response = gnucash::dispatch(legacy_request);
 
+    // Calculate duration
+    auto end_time = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+        end_time - start_time);
+    audit_record.duration_ms = static_cast<int>(duration.count());
+
     // Check for error
     if (legacy_response.contains("error")) {
+        // Log error
+        audit_record.result_status = audit::ResultStatus::ERROR;
+        audit_record.error_message = legacy_response["error"]["message"];
+
+        if (g_audit_logger) {
+            g_audit_logger->log(audit_record);
+        }
+
         // Convert legacy error to JSON-RPC error
         std::string error_msg = legacy_response["error"]["message"];
         return make_jsonrpc_error(error_codes::INTERNAL_ERROR, error_msg, id);
     }
 
-    // Wrap result in MCP content format
-    json result_value = legacy_response["result"];
+    // Log success
+    audit_record.result_status = audit::ResultStatus::SUCCESS;
 
-    // Convert result to text content
+    // Extract entity GUID from result if present
+    json result_value = legacy_response["result"];
+    if (result_value.is_object()) {
+        if (result_value.contains("guid")) {
+            audit_record.entity_guid = result_value["guid"].get<std::string>();
+        } else if (result_value.contains("book_guid")) {
+            audit_record.entity_guid = result_value["book_guid"].get<std::string>();
+        }
+    }
+
+    if (g_audit_logger) {
+        g_audit_logger->log(audit_record);
+    }
+
+    // Wrap result in MCP content format
     std::string text_content;
     if (result_value.is_string()) {
         text_content = result_value.get<std::string>();
@@ -480,6 +655,25 @@ std::vector<ToolDefinition> get_tool_definitions() {
                 {"content", {{"type", "string"}, {"description", "OFX file content"}}}
             },
             {"content"}
+        }
+    });
+
+    // Tool 20: gnucash_audit_log
+    tools.push_back({
+        "gnucash_audit_log",
+        "Query audit trail with filters",
+        {
+            "object",
+            {
+                {"since", {{"type", "string"}, {"description", "Start timestamp (ISO 8601)"}}},
+                {"until", {{"type", "string"}, {"description", "End timestamp (ISO 8601)"}}},
+                {"tool_name", {{"type", "string"}, {"description", "Filter by tool name"}}},
+                {"classification", {{"type", "string"}, {"enum", json::array({"read", "write"})}}},
+                {"user_email", {{"type", "string"}, {"description", "Filter by user email"}}},
+                {"entity_guid", {{"type", "string"}, {"description", "Filter by entity GUID"}}},
+                {"limit", {{"type", "integer"}, {"description", "Max records to return"}, {"default", 100}}}
+            },
+            {}
         }
     });
 
