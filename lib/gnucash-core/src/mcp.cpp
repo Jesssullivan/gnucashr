@@ -17,6 +17,9 @@ static std::optional<audit::AuditLogger> g_audit_logger;
 // Current book path (for audit logging)
 static std::string g_book_path;
 
+// Agent configuration (filters available tools)
+static std::optional<dhall::AgentConfig> g_agent_config;
+
 // ========================================================================
 // Protocol Detection
 // ========================================================================
@@ -430,11 +433,20 @@ void run_mcp_loop() {
 // Tool Registry (Task 5.1.2 - Tool definitions)
 // ========================================================================
 
+void set_agent_config(const dhall::AgentConfig& config) {
+    g_agent_config = config;
+}
+
+std::optional<dhall::AgentConfig> get_agent_config() {
+    return g_agent_config;
+}
+
 std::vector<ToolDefinition> get_tool_definitions() {
-    std::vector<ToolDefinition> tools;
+    // Get all tools
+    std::vector<ToolDefinition> all_tools;
 
     // Tool 1: gnucash_open
-    tools.push_back({
+    all_tools.push_back({
         "gnucash_open",
         "Open a GnuCash book file",
         {
@@ -448,35 +460,35 @@ std::vector<ToolDefinition> get_tool_definitions() {
     });
 
     // Tool 2: gnucash_close
-    tools.push_back({
+    all_tools.push_back({
         "gnucash_close",
         "Close the currently open GnuCash book",
         {"object", json::object(), {}}
     });
 
     // Tool 3: gnucash_info
-    tools.push_back({
+    all_tools.push_back({
         "gnucash_info",
         "Get information about the currently open book",
         {"object", json::object(), {}}
     });
 
     // Tool 4: gnucash_get_accounts
-    tools.push_back({
+    all_tools.push_back({
         "gnucash_get_accounts",
         "List all accounts in the book",
         {"object", json::object(), {}}
     });
 
     // Tool 5: gnucash_account_tree
-    tools.push_back({
+    all_tools.push_back({
         "gnucash_account_tree",
         "Get hierarchical account tree with full paths",
         {"object", json::object(), {}}
     });
 
     // Tool 6: gnucash_get_account
-    tools.push_back({
+    all_tools.push_back({
         "gnucash_get_account",
         "Get account details by GUID",
         {
@@ -489,7 +501,7 @@ std::vector<ToolDefinition> get_tool_definitions() {
     });
 
     // Tool 7: gnucash_get_account_by_path
-    tools.push_back({
+    all_tools.push_back({
         "gnucash_get_account_by_path",
         "Get account by full path (e.g., 'Assets:Current Assets:Checking')",
         {
@@ -502,7 +514,7 @@ std::vector<ToolDefinition> get_tool_definitions() {
     });
 
     // Tool 8: gnucash_get_transactions
-    tools.push_back({
+    all_tools.push_back({
         "gnucash_get_transactions",
         "Query transactions with optional date filtering",
         {
@@ -516,7 +528,7 @@ std::vector<ToolDefinition> get_tool_definitions() {
     });
 
     // Tool 9: gnucash_get_transaction
-    tools.push_back({
+    all_tools.push_back({
         "gnucash_get_transaction",
         "Get transaction details by GUID",
         {
@@ -529,7 +541,7 @@ std::vector<ToolDefinition> get_tool_definitions() {
     });
 
     // Tool 10: gnucash_get_splits
-    tools.push_back({
+    all_tools.push_back({
         "gnucash_get_splits",
         "Get all splits for an account",
         {
@@ -542,7 +554,7 @@ std::vector<ToolDefinition> get_tool_definitions() {
     });
 
     // Tool 11: gnucash_get_balance
-    tools.push_back({
+    all_tools.push_back({
         "gnucash_get_balance",
         "Get account balance as of a specific date",
         {
@@ -556,7 +568,7 @@ std::vector<ToolDefinition> get_tool_definitions() {
     });
 
     // Tool 12: gnucash_trial_balance
-    tools.push_back({
+    all_tools.push_back({
         "gnucash_trial_balance",
         "Get trial balance (all account balances)",
         {
@@ -569,21 +581,21 @@ std::vector<ToolDefinition> get_tool_definitions() {
     });
 
     // Tool 13: gnucash_get_commodities
-    tools.push_back({
+    all_tools.push_back({
         "gnucash_get_commodities",
         "List all commodities (currencies and securities)",
         {"object", json::object(), {}}
     });
 
     // Tool 14: gnucash_get_prices
-    tools.push_back({
+    all_tools.push_back({
         "gnucash_get_prices",
         "Get price database entries",
         {"object", json::object(), {}}
     });
 
     // Tool 15: gnucash_create_account (WRITE)
-    tools.push_back({
+    all_tools.push_back({
         "gnucash_create_account",
         "Create a new account (requires write access)",
         {
@@ -602,7 +614,7 @@ std::vector<ToolDefinition> get_tool_definitions() {
     });
 
     // Tool 16: gnucash_post_transaction (WRITE)
-    tools.push_back({
+    all_tools.push_back({
         "gnucash_post_transaction",
         "Create a new transaction (requires write access)",
         {
@@ -619,7 +631,7 @@ std::vector<ToolDefinition> get_tool_definitions() {
     });
 
     // Tool 17: gnucash_delete_transaction (WRITE)
-    tools.push_back({
+    all_tools.push_back({
         "gnucash_delete_transaction",
         "Delete a transaction (requires write access)",
         {
@@ -632,7 +644,7 @@ std::vector<ToolDefinition> get_tool_definitions() {
     });
 
     // Tool 18: gnucash_void_transaction (WRITE)
-    tools.push_back({
+    all_tools.push_back({
         "gnucash_void_transaction",
         "Void a transaction with reversal (requires write access)",
         {
@@ -646,7 +658,7 @@ std::vector<ToolDefinition> get_tool_definitions() {
     });
 
     // Tool 19: gnucash_parse_ofx
-    tools.push_back({
+    all_tools.push_back({
         "gnucash_parse_ofx",
         "Parse OFX/QFX bank statement file content",
         {
@@ -659,7 +671,7 @@ std::vector<ToolDefinition> get_tool_definitions() {
     });
 
     // Tool 20: gnucash_audit_log
-    tools.push_back({
+    all_tools.push_back({
         "gnucash_audit_log",
         "Query audit trail with filters",
         {
@@ -677,7 +689,26 @@ std::vector<ToolDefinition> get_tool_definitions() {
         }
     });
 
-    return tools;
+    // Filter tools if agent config is loaded
+    if (g_agent_config) {
+        std::vector<ToolDefinition> filtered_tools;
+        for (const auto& tool : all_tools) {
+            // Check if tool is in agent's allowed list
+            bool allowed = false;
+            for (const auto& allowed_tool : g_agent_config->tools) {
+                if (tool.name == allowed_tool) {
+                    allowed = true;
+                    break;
+                }
+            }
+            if (allowed) {
+                filtered_tools.push_back(tool);
+            }
+        }
+        return filtered_tools;
+    }
+
+    return all_tools;
 }
 
 std::optional<ToolDefinition> get_tool_definition(const std::string& name) {

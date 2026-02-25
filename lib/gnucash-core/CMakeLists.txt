@@ -109,6 +109,7 @@ if(GNUCASH_CORE_BUILD_BRIDGE)
     add_executable(gnucash-bridge
         src/json_api.cpp
         src/mcp.cpp
+        src/dhall_config.cpp
         src/main.cpp
     )
 

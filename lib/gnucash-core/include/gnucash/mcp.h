@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 #include <optional>
+#include "dhall_config.h"
 
 namespace gnucash {
 namespace mcp {
@@ -145,6 +146,12 @@ std::vector<ToolDefinition> get_tool_definitions();
 
 /// Get tool definition by name
 std::optional<ToolDefinition> get_tool_definition(const std::string& name);
+
+/// Set agent configuration (filters available tools)
+void set_agent_config(const dhall::AgentConfig& config);
+
+/// Get current agent configuration (if any)
+std::optional<dhall::AgentConfig> get_agent_config();
 
 // ========================================================================
 // JSON-RPC 2.0 Error Codes

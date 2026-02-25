@@ -1,6 +1,8 @@
 -- Re-export all types
 let GnuCashOps = ./types/GnuCashOperation.dhall
 
+let AgentTypes = ./types/Agent.dhall
+
 in  { AccountType = ./types/AccountType.dhall
     , AuthorizationLevel = ./types/AuthorizationLevel.dhall
     , AgentRule = ./types/AgentRule.dhall
@@ -14,4 +16,7 @@ in  { AccountType = ./types/AccountType.dhall
     , BalanceQuery = GnuCashOps.BalanceQuery
     , TransactionQuery = GnuCashOps.TransactionQuery
     , Split = GnuCashOps.Split
+    , Agent = AgentTypes.Agent
+    , Schedule = AgentTypes.Schedule
+    , VendorPattern = AgentTypes.VendorPattern
     }
