@@ -1,6 +1,7 @@
-#include "json_api.h"
+#include "gnucash/mcp.h"
 
 int main() {
-    gnucash::run_json_loop();
+    // Use MCP protocol (with legacy fallback)
+    gnucash::mcp::run_mcp_loop();
     return 0;
 }
