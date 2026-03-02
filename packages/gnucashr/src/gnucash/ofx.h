@@ -2,6 +2,7 @@
 // OFX/QFX file parser for bank statement imports
 // Handles both OFX v1.x (SGML) and v2.x (XML) formats
 
+#include "fraction.h"
 #include <string>
 #include <vector>
 #include <optional>
@@ -11,7 +12,8 @@ namespace gnucash {
 // OFX transaction record
 struct OfxTransaction {
     std::string date;       // ISO format: YYYY-MM-DD
-    double amount;          // Signed amount
+    double amount;          // Signed amount (backward compat)
+    Fraction amount_fraction; // Exact signed amount as rational fraction
     std::string name;       // Payee name
     std::string fitid;      // Financial institution transaction ID
     std::string memo;

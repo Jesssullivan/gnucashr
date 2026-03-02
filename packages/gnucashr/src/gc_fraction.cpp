@@ -3,8 +3,64 @@
 
 #include "gnucash/fraction.h"
 #include <cstdlib>
+#include <algorithm>
+#include <cctype>
 
 namespace gnucash {
+
+Fraction Fraction::from_string(const std::string& s) {
+    if (s.empty()) return {0, 100};
+
+    // Strip whitespace, currency symbols, commas
+    std::string clean;
+    clean.reserve(s.size());
+    bool negative = false;
+    for (char c : s) {
+        if (c == '-') {
+            negative = !negative;
+        } else if (c == '$' || c == ',' || c == ' ' || c == '\t') {
+            // skip
+        } else if (c == '(' || c == ')') {
+            // Accounting format: (45.23) means negative
+            if (c == '(') negative = !negative;
+        } else {
+            clean.push_back(c);
+        }
+    }
+
+    if (clean.empty()) return {0, 100};
+
+    // Find decimal point
+    auto dot = clean.find('.');
+    int64_t integer_part = 0;
+    int64_t decimal_part = 0;
+    int64_t denom = 1;
+
+    if (dot == std::string::npos) {
+        // No decimal: e.g. "45" -> 4500/100
+        integer_part = std::strtoll(clean.c_str(), nullptr, 10);
+        denom = 100;
+    } else {
+        // Has decimal: count decimal places
+        std::string int_str = clean.substr(0, dot);
+        std::string dec_str = clean.substr(dot + 1);
+
+        if (!int_str.empty())
+            integer_part = std::strtoll(int_str.c_str(), nullptr, 10);
+
+        // Calculate denom based on number of decimal places
+        denom = 1;
+        for (size_t i = 0; i < dec_str.size(); i++) denom *= 10;
+
+        if (!dec_str.empty())
+            decimal_part = std::strtoll(dec_str.c_str(), nullptr, 10);
+    }
+
+    int64_t num = integer_part * denom + decimal_part;
+    if (negative) num = -num;
+
+    return {num, denom};
+}
 
 int64_t gcd(int64_t a, int64_t b) {
     a = std::abs(a);

@@ -155,8 +155,10 @@ OfxParseResult parse_ofx(const std::string& content) {
             clean.erase(std::remove(clean.begin(), clean.end(), '$'), clean.end());
             try { txn.amount = std::stod(clean); }
             catch (...) { txn.amount = 0.0; }
+            txn.amount_fraction = Fraction::from_string(trnamt);
         } else {
             txn.amount = 0.0;
+            txn.amount_fraction = {0, 100};
         }
 
         result.transactions.push_back(std::move(txn));

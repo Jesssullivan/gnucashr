@@ -203,6 +203,365 @@ gc_void_transaction <- function(book_ptr, guid, reason) {
     invisible(.Call(`_gnucashr_gc_void_transaction`, book_ptr, guid, reason))
 }
 
+#' Update Split Account (C++ Backend)
+#'
+#' Reassign a split to a different account (for recategorization).
+#'
+#' @param book_ptr External pointer from gc_open() (must be read-write)
+#' @param split_guid Split GUID to update
+#' @param new_account_guid Target account GUID
+#' @export
+gc_update_split <- function(book_ptr, split_guid, new_account_guid) {
+    invisible(.Call(`_gnucashr_gc_update_split`, book_ptr, split_guid, new_account_guid))
+}
+
+#' Get Splits for Account (C++ Backend)
+#'
+#' @param book_ptr External pointer from gc_open()
+#' @param account_guid Account GUID
+#' @return Data frame of splits ordered by post_date
+#' @export
+gc_get_splits <- function(book_ptr, account_guid) {
+    .Call(`_gnucashr_gc_get_splits`, book_ptr, account_guid)
+}
+
+#' Parse CSV Bank Statement (C++ Backend)
+#'
+#' Parse a CSV string using a named format preset.
+#'
+#' @param content CSV content as string
+#' @param format_name Format preset: "paypal", "stripe", "venmo", "apple_card", "generic"
+#' @return Data frame with date, amount_num, amount_denom, description, memo, id, category
+#' @export
+gc_parse_csv <- function(content, format_name = "generic") {
+    .Call(`_gnucashr_gc_parse_csv`, content, format_name)
+}
+
+#' Detect CSV Format (C++ Backend)
+#'
+#' Auto-detect CSV format from the header line.
+#'
+#' @param header_line First line of the CSV file
+#' @return Format name string, or empty string if unknown
+#' @export
+gc_detect_csv_format <- function(header_line) {
+    .Call(`_gnucashr_gc_detect_csv_format`, header_line)
+}
+
+#' Get CSV Format Info (C++ Backend)
+#'
+#' Return column mapping for a named format.
+#'
+#' @param format_name Format name: "paypal", "stripe", "venmo", "apple_card", "generic"
+#' @return Named list with format details
+#' @export
+gc_csv_format_info <- function(format_name) {
+    .Call(`_gnucashr_gc_csv_format_info`, format_name)
+}
+
+#' Get Slot Value (C++ Backend)
+#'
+#' Get a single slot value from the GnuCash slots table.
+#'
+#' @param book_ptr External pointer from gc_open()
+#' @param obj_guid Entity GUID (split, account, or transaction)
+#' @param name Slot name (e.g., "online_id", "notes")
+#' @return Named list with slot details, or NULL if not found
+#' @export
+gc_get_slot <- function(book_ptr, obj_guid, name) {
+    .Call(`_gnucashr_gc_get_slot`, book_ptr, obj_guid, name)
+}
+
+#' Set String Slot Value (C++ Backend)
+#'
+#' Set a string-typed slot on an entity. Creates or updates.
+#'
+#' @param book_ptr External pointer from gc_open() (must be read-write)
+#' @param obj_guid Entity GUID
+#' @param name Slot name
+#' @param value Slot value
+#' @export
+gc_set_slot <- function(book_ptr, obj_guid, name, value) {
+    invisible(.Call(`_gnucashr_gc_set_slot`, book_ptr, obj_guid, name, value))
+}
+
+#' Delete Slot (C++ Backend)
+#'
+#' @param book_ptr External pointer from gc_open() (must be read-write)
+#' @param obj_guid Entity GUID
+#' @param name Slot name
+#' @export
+gc_delete_slot <- function(book_ptr, obj_guid, name) {
+    invisible(.Call(`_gnucashr_gc_delete_slot`, book_ptr, obj_guid, name))
+}
+
+#' Get All Slots for Entity (C++ Backend)
+#'
+#' @param book_ptr External pointer from gc_open()
+#' @param obj_guid Entity GUID
+#' @return Data frame of all slots
+#' @export
+gc_get_all_slots <- function(book_ptr, obj_guid) {
+    .Call(`_gnucashr_gc_get_all_slots`, book_ptr, obj_guid)
+}
+
+#' Find Split by FITID (C++ Backend)
+#'
+#' Dedup check: find a split with matching online_id in the given account.
+#'
+#' @param book_ptr External pointer from gc_open()
+#' @param account_guid Account GUID to search within
+#' @param fitid FITID (Financial Institution Transaction ID)
+#' @return Split GUID string, or empty string if not found
+#' @export
+gc_find_split_by_fitid <- function(book_ptr, account_guid, fitid) {
+    .Call(`_gnucashr_gc_find_split_by_fitid`, book_ptr, account_guid, fitid)
+}
+
+#' Batch Check FITIDs (C++ Backend)
+#'
+#' Check which FITIDs already exist for an account.
+#'
+#' @param book_ptr External pointer from gc_open()
+#' @param account_guid Account GUID
+#' @param fitids Character vector of FITIDs to check
+#' @return Data frame with columns fitid and split_guid (only matches)
+#' @export
+gc_check_fitids <- function(book_ptr, account_guid, fitids) {
+    .Call(`_gnucashr_gc_check_fitids`, book_ptr, account_guid, fitids)
+}
+
+#' Import OFX Bank Feed (C++ Backend)
+#'
+#' Parse OFX content, dedup by FITID, and import transactions.
+#'
+#' @param book_ptr External pointer from gc_open() (must be read-write)
+#' @param content OFX file content as string
+#' @param target_account_guid Bank account GUID
+#' @param imbalance_account_guid Imbalance/uncategorized account GUID
+#' @return Named list with total_parsed, imported, duplicates, errors, imported_guids
+#' @export
+gc_import_ofx_feed <- function(book_ptr, content, target_account_guid, imbalance_account_guid) {
+    .Call(`_gnucashr_gc_import_ofx_feed`, book_ptr, content, target_account_guid, imbalance_account_guid)
+}
+
+#' Import CSV Bank Feed (C++ Backend)
+#'
+#' Parse CSV content, dedup by FITID, and import transactions.
+#'
+#' @param book_ptr External pointer from gc_open() (must be read-write)
+#' @param content CSV file content as string
+#' @param format_name CSV format preset name
+#' @param target_account_guid Bank account GUID
+#' @param imbalance_account_guid Imbalance/uncategorized account GUID
+#' @return Named list with total_parsed, imported, duplicates, errors, imported_guids
+#' @export
+gc_import_csv_feed <- function(book_ptr, content, format_name, target_account_guid, imbalance_account_guid) {
+    .Call(`_gnucashr_gc_import_csv_feed`, book_ptr, content, format_name, target_account_guid, imbalance_account_guid)
+}
+
+#' Check Duplicate FITIDs (C++ Backend)
+#'
+#' @param book_ptr External pointer from gc_open()
+#' @param account_guid Account GUID
+#' @param fitids Character vector of FITIDs
+#' @return Data frame with fitid and split_guid columns (matches only)
+#' @export
+gc_check_duplicates <- function(book_ptr, account_guid, fitids) {
+    .Call(`_gnucashr_gc_check_duplicates`, book_ptr, account_guid, fitids)
+}
+
+#' Reconcile Account (C++ Backend)
+#'
+#' Mark unreconciled splits as cleared up to statement_date and compute balance.
+#'
+#' @param book_ptr External pointer from gc_open() (must be read-write)
+#' @param account_guid Account GUID
+#' @param statement_date Statement date (YYYY-MM-DD)
+#' @param statement_balance Expected balance as double
+#' @return Named list with splits_reconciled, statement_balance, book_balance,
+#'   difference, balanced
+#' @export
+gc_reconcile_account <- function(book_ptr, account_guid, statement_date, statement_balance) {
+    .Call(`_gnucashr_gc_reconcile_account`, book_ptr, account_guid, statement_date, statement_balance)
+}
+
+#' Find Cross-Institution Transfer Matches (C++ Backend)
+#'
+#' Find potential transfer matches between two accounts based on
+#' inverted amounts, date proximity, and description similarity.
+#'
+#' @param book_ptr External pointer from gc_open()
+#' @param account_a_guid First account GUID
+#' @param account_b_guid Second account GUID
+#' @param from_date Start date (YYYY-MM-DD)
+#' @param to_date End date (YYYY-MM-DD)
+#' @param date_window Max days between matching transactions (default 3)
+#' @param min_similarity Minimum match confidence 0-1 (default 0.5)
+#' @return Data frame with match details
+#' @export
+gc_find_transfer_matches <- function(book_ptr, account_a_guid, account_b_guid, from_date, to_date, date_window = 3L, min_similarity = 0.5) {
+    .Call(`_gnucashr_gc_find_transfer_matches`, book_ptr, account_a_guid, account_b_guid, from_date, to_date, date_window, min_similarity)
+}
+
+#' Resolve Identity (C++ Backend)
+#'
+#' Determine the current user identity using CLI flag, GNUCASH_USER env,
+#' or system username fallback.
+#'
+#' @param cli_identity Optional identity override (e.g. from CLI flag)
+#' @return Named list with user_id, display_name, node_name, source
+#' @export
+gc_resolve_identity <- function(cli_identity = NULL) {
+    .Call(`_gnucashr_gc_resolve_identity`, cli_identity)
+}
+
+#' Get System Username (C++ Backend)
+#'
+#' @return System username string
+#' @export
+gc_system_username <- function() {
+    .Call(`_gnucashr_gc_system_username`)
+}
+
+#' Open Audit Database (C++ Backend)
+#'
+#' Opens or creates an audit database for a GnuCash book.
+#' The database is stored at <book_path>.audit.db.
+#'
+#' @param book_path Path to the GnuCash book file
+#' @return External pointer to AuditLogger object
+#' @export
+gc_audit_open <- function(book_path) {
+    .Call(`_gnucashr_gc_audit_open`, book_path)
+}
+
+#' Close Audit Database (C++ Backend)
+#'
+#' @param audit_ptr External pointer from gc_audit_open()
+#' @export
+gc_audit_close <- function(audit_ptr) {
+    invisible(.Call(`_gnucashr_gc_audit_close`, audit_ptr))
+}
+
+#' Log Audit Record (C++ Backend)
+#'
+#' @param audit_ptr External pointer from gc_audit_open()
+#' @param tool_name MCP tool name
+#' @param book_path GnuCash file path
+#' @param classification "read" or "write"
+#' @param result_status "success" or "error"
+#' @param entity_guid Optional entity GUID
+#' @param error_message Optional error message
+#' @param duration_ms Optional execution time in milliseconds
+#' @export
+gc_audit_log <- function(audit_ptr, tool_name, book_path, classification = "read", result_status = "success", entity_guid = NULL, error_message = NULL, duration_ms = NULL) {
+    invisible(.Call(`_gnucashr_gc_audit_log`, audit_ptr, tool_name, book_path, classification, result_status, entity_guid, error_message, duration_ms))
+}
+
+#' Query Audit Log (C++ Backend)
+#'
+#' @param audit_ptr External pointer from gc_audit_open()
+#' @param since Optional start timestamp (ISO 8601)
+#' @param until Optional end timestamp (ISO 8601)
+#' @param tool_name Optional tool name filter
+#' @param limit Maximum records to return (default 100)
+#' @return Data frame of audit records
+#' @export
+gc_audit_query <- function(audit_ptr, since = NULL, until = NULL, tool_name = NULL, limit = 100L) {
+    .Call(`_gnucashr_gc_audit_query`, audit_ptr, since, until, tool_name, limit)
+}
+
+#' Export Audit Log in Aperture Format (C++ Backend)
+#'
+#' Export audit records as JSONL compatible with Tailscale Aperture.
+#'
+#' @param audit_ptr External pointer from gc_audit_open()
+#' @param since Optional start timestamp (ISO 8601)
+#' @param until Optional end timestamp (ISO 8601)
+#' @param limit Maximum records (default 100)
+#' @return JSONL string
+#' @export
+gc_audit_export_aperture <- function(audit_ptr, since = NULL, until = NULL, limit = 100L) {
+    .Call(`_gnucashr_gc_audit_export_aperture`, audit_ptr, since, until, limit)
+}
+
+#' Open Agent State Database (C++ Backend)
+#'
+#' Opens or creates a per-agent state database.
+#' Stored at <book_path>.agent.<agent_name>.db.
+#'
+#' @param book_path Path to the GnuCash book file
+#' @param agent_name Agent identifier (e.g. "spend-monitor")
+#' @return External pointer to AgentStateDB object
+#' @export
+gc_agent_state_open <- function(book_path, agent_name) {
+    .Call(`_gnucashr_gc_agent_state_open`, book_path, agent_name)
+}
+
+#' Close Agent State Database (C++ Backend)
+#'
+#' @param state_ptr External pointer from gc_agent_state_open()
+#' @export
+gc_agent_state_close <- function(state_ptr) {
+    invisible(.Call(`_gnucashr_gc_agent_state_close`, state_ptr))
+}
+
+#' Set Agent State Value (C++ Backend)
+#'
+#' @param state_ptr External pointer from gc_agent_state_open()
+#' @param key State key
+#' @param value State value
+#' @export
+gc_agent_state_set <- function(state_ptr, key, value) {
+    invisible(.Call(`_gnucashr_gc_agent_state_set`, state_ptr, key, value))
+}
+
+#' Get Agent State Value (C++ Backend)
+#'
+#' @param state_ptr External pointer from gc_agent_state_open()
+#' @param key State key
+#' @return Value string, or NULL if key not found
+#' @export
+gc_agent_state_get <- function(state_ptr, key) {
+    .Call(`_gnucashr_gc_agent_state_get`, state_ptr, key)
+}
+
+#' Enqueue Review Item (C++ Backend)
+#'
+#' Add a transaction categorization suggestion to the review queue.
+#'
+#' @param state_ptr External pointer from gc_agent_state_open()
+#' @param transaction_guid Transaction GUID
+#' @param suggested_category Target account path
+#' @param confidence Confidence score 0-1
+#' @param reason Reasoning for the suggestion
+#' @return Integer ID of the created review item
+#' @export
+gc_agent_state_enqueue_review <- function(state_ptr, transaction_guid, suggested_category, confidence, reason) {
+    .Call(`_gnucashr_gc_agent_state_enqueue_review`, state_ptr, transaction_guid, suggested_category, confidence, reason)
+}
+
+#' Get Pending Reviews (C++ Backend)
+#'
+#' @param state_ptr External pointer from gc_agent_state_open()
+#' @param limit Maximum items to return (default 50)
+#' @return Data frame of pending review items
+#' @export
+gc_agent_state_pending_reviews <- function(state_ptr, limit = 50L) {
+    .Call(`_gnucashr_gc_agent_state_pending_reviews`, state_ptr, limit)
+}
+
+#' Update Review Status (C++ Backend)
+#'
+#' @param state_ptr External pointer from gc_agent_state_open()
+#' @param id Review item ID
+#' @param status New status: "pending", "approved", or "rejected"
+#' @export
+gc_agent_state_update_review <- function(state_ptr, id, status) {
+    invisible(.Call(`_gnucashr_gc_agent_state_update_review`, state_ptr, id, status))
+}
+
 #' Generate GnuCash-Format GUID
 #'
 #' Generate a random 32-character hex GUID in GnuCash format.
