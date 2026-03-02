@@ -272,6 +272,23 @@ json handle_tools_call(const json& params, const json& id) {
         return make_jsonrpc_result(mcp_result, id);
     }
 
+    // Capture before_state for destructive write operations
+    if (is_write && (tool_name == "gnucash_delete_transaction" ||
+                     tool_name == "gnucash_void_transaction")) {
+        if (arguments.contains("guid")) {
+            json before_req = {
+                {"method", "get_transaction"},
+                {"params", {{"guid", arguments["guid"]}}},
+                {"id", "before_state"}
+            };
+            json before_resp = gnucash::dispatch(before_req);
+            if (before_resp.contains("result") && !before_resp.contains("error")) {
+                audit_record.before_state = before_resp["result"];
+                audit_record.entity_guid = arguments["guid"];
+            }
+        }
+    }
+
     // Build legacy JSON request
     json legacy_request = {
         {"method", method_name},
@@ -314,6 +331,43 @@ json handle_tools_call(const json& params, const json& id) {
         } else if (result_value.contains("book_guid")) {
             audit_record.entity_guid = result_value["book_guid"].get<std::string>();
         }
+    }
+
+    // Capture after_state for create operations
+    if (is_write && audit_record.entity_guid) {
+        if (tool_name == "gnucash_create_account") {
+            json after_req = {
+                {"method", "get_account"},
+                {"params", {{"guid", *audit_record.entity_guid}}},
+                {"id", "after_state"}
+            };
+            json after_resp = gnucash::dispatch(after_req);
+            if (after_resp.contains("result") && !after_resp.contains("error")) {
+                audit_record.after_state = after_resp["result"];
+            }
+        } else if (tool_name == "gnucash_post_transaction") {
+            json after_req = {
+                {"method", "get_transaction"},
+                {"params", {{"guid", *audit_record.entity_guid}}},
+                {"id", "after_state"}
+            };
+            json after_resp = gnucash::dispatch(after_req);
+            if (after_resp.contains("result") && !after_resp.contains("error")) {
+                audit_record.after_state = after_resp["result"];
+            }
+        } else if (tool_name == "gnucash_void_transaction") {
+            // After voiding, capture the voided state
+            json after_req = {
+                {"method", "get_transaction"},
+                {"params", {{"guid", *audit_record.entity_guid}}},
+                {"id", "after_state"}
+            };
+            json after_resp = gnucash::dispatch(after_req);
+            if (after_resp.contains("result") && !after_resp.contains("error")) {
+                audit_record.after_state = after_resp["result"];
+            }
+        }
+        // delete_transaction: no after_state (entity no longer exists)
     }
 
     if (g_audit_logger) {

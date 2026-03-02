@@ -78,7 +78,12 @@ if(GNUCASH_CORE_BUILD_TESTS)
         test/test_book.cpp
         test/test_json_api.cpp
         test/test_ofx.cpp
+        test/test_mcp.cpp
+        test/test_audit.cpp
         src/json_api.cpp
+        src/mcp.cpp
+        src/audit.cpp
+        src/dhall_config.cpp
     )
 
     # Pass fixture path as compile definition
