@@ -46,10 +46,17 @@ jobs:
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
 
+      - name: Install Linux system dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libtbb-dev libsqlite3-dev
+        working-directory: .
+
       - name: Install macOS system dependencies
         if: runner.os == 'macOS'
         run: |
-          brew install harfbuzz fribidi freetype
+          brew install harfbuzz fribidi freetype tbb sqlite3
         working-directory: .
 
       # macOS: use base R install.packages to avoid pak binary download failures

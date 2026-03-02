@@ -143,12 +143,13 @@
           name = "gnucashr-cpp-${version}";
           src = ./packages/gnucashr/src;
 
-          buildInputs = [ rWithPackages pkgs.tbb ];
-          nativeBuildInputs = [ pkgs.gcc ];
+          buildInputs = [ rWithPackages pkgs.tbb pkgs.sqlite ];
+          nativeBuildInputs = [ pkgs.gcc pkgs.pkg-config ];
 
           # TBB include/lib paths
           TBB_INCLUDE = "${pkgs.tbb.dev}/include";
           TBB_LIB = "${pkgs.tbb}/lib";
+          SQLITE3_INCLUDE = "${pkgs.sqlite.dev}/include";
 
           buildPhase = ''
             echo "Compiling C++ source files..."
@@ -176,6 +177,8 @@
                   -I"$RCPP_ARMA_INCLUDE" \
                   -I"$RCPP_PARALLEL_INCLUDE" \
                   -I"$TBB_INCLUDE" \
+                  -I"$SQLITE3_INCLUDE" \
+                  -I. \
                   -std=c++17 -fopenmp -fPIC -DNDEBUG -O2
               fi
             done
