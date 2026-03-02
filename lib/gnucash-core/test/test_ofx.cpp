@@ -188,3 +188,33 @@ TEST_CASE("parse_ofx ledger balance", "[ofx]") {
     auto result = gnucash::parse_ofx(OFX_V1);
     REQUIRE(result.account.ledger_balance == "5307.50");
 }
+
+TEST_CASE("parse_ofx amount_fraction v1", "[ofx]") {
+    auto result = gnucash::parse_ofx(OFX_V1);
+    REQUIRE(result.transactions.size() == 3);
+
+    // -42.50 -> Fraction(-4250, 100)
+    REQUIRE(result.transactions[0].amount_fraction.num == -4250);
+    REQUIRE(result.transactions[0].amount_fraction.denom == 100);
+
+    // 3500.00 -> Fraction(350000, 100)
+    REQUIRE(result.transactions[1].amount_fraction.num == 350000);
+    REQUIRE(result.transactions[1].amount_fraction.denom == 100);
+
+    // -150.00 -> Fraction(-15000, 100)
+    REQUIRE(result.transactions[2].amount_fraction.num == -15000);
+    REQUIRE(result.transactions[2].amount_fraction.denom == 100);
+}
+
+TEST_CASE("parse_ofx amount_fraction v2", "[ofx]") {
+    auto result = gnucash::parse_ofx(OFX_V2);
+    REQUIRE(result.transactions.size() == 2);
+
+    // -25.99
+    REQUIRE(result.transactions[0].amount_fraction.num == -2599);
+    REQUIRE(result.transactions[0].amount_fraction.denom == 100);
+
+    // 1000.00
+    REQUIRE(result.transactions[1].amount_fraction.num == 100000);
+    REQUIRE(result.transactions[1].amount_fraction.denom == 100);
+}

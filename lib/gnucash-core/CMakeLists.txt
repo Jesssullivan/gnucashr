@@ -29,9 +29,16 @@ add_library(gnucash-core
     src/types.cpp
     src/book.cpp
     src/ofx.cpp
+    src/csv.cpp
+    src/slots.cpp
+    src/bank_feed.cpp
+    src/reconcile.cpp
     src/audit.cpp
     src/agent_state.cpp
     src/agent.cpp
+    src/identity.cpp
+    src/security.cpp
+    src/approval.cpp
 )
 
 target_include_directories(gnucash-core
@@ -85,6 +92,11 @@ if(GNUCASH_CORE_BUILD_TESTS)
         test/test_mcp.cpp
         test/test_audit.cpp
         test/test_agent.cpp
+        test/test_security.cpp
+        test/test_slots.cpp
+        test/test_csv.cpp
+        test/test_bank_feed.cpp
+        test/test_reconcile.cpp
         src/json_api.cpp
         src/mcp.cpp
         src/dhall_config.cpp

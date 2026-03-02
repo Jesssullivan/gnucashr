@@ -18,6 +18,8 @@
 #include <vector>
 #include <optional>
 #include "dhall_config.h"
+#include "identity.h"
+#include "security.h"
 
 namespace gnucash {
 namespace mcp {
@@ -152,6 +154,12 @@ void set_agent_config(const dhall::AgentConfig& config);
 
 /// Get current agent configuration (if any)
 std::optional<dhall::AgentConfig> get_agent_config();
+
+/// Set identity for audit trail
+void set_identity(const Identity& identity);
+
+/// Enable security enforcement
+void set_security_policy(SecurityPolicy policy);
 
 // ========================================================================
 // JSON-RPC 2.0 Error Codes

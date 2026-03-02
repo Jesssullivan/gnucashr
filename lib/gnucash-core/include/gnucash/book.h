@@ -68,8 +68,15 @@ public:
 
     Result<std::string> post_transaction(const Transaction& txn);
 
+    // Update a split's account assignment (for recategorization)
+    Result<void> update_split(const std::string& split_guid,
+                              const std::string& new_account_guid);
+
     Result<void> delete_transaction(const std::string& guid);
     Result<void> void_transaction(const std::string& guid, const std::string& reason);
+
+    // Raw database handle (for slots/bank_feed modules)
+    sqlite3* raw_db() const;
 
     // Move semantics only (no copy)
     Book(Book&& other) noexcept;

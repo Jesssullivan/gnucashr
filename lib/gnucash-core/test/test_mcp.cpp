@@ -313,3 +313,122 @@ TEST_CASE("error codes: standard JSON-RPC values", "[mcp][errors]") {
     REQUIRE(error_codes::INVALID_PARAMS == -32602);
     REQUIRE(error_codes::INTERNAL_ERROR == -32603);
 }
+
+// ========================================================================
+// Phase 5: New tool definitions present (9 new tools)
+// ========================================================================
+
+TEST_CASE("tools/list: has all 29 tools", "[mcp][tools][phase5]") {
+    // Reset agent config to get all tools
+    gnucash::dhall::AgentConfig config;
+    config.name = "all";
+    config.description = "all";
+    config.tools = {}; // Empty = don't filter
+
+    // Get unfiltered tools by not setting agent config
+    auto all_tools = get_tool_definitions();
+
+    // Collect names
+    std::vector<std::string> names;
+    for (const auto& t : all_tools) {
+        names.push_back(t.name);
+    }
+
+    auto has = [&](const std::string& n) {
+        return std::find(names.begin(), names.end(), n) != names.end();
+    };
+
+    // Phase 5 tools
+    REQUIRE(has("gnucash_import_ofx"));
+    REQUIRE(has("gnucash_import_csv"));
+    REQUIRE(has("gnucash_check_duplicates"));
+    REQUIRE(has("gnucash_get_slots"));
+    REQUIRE(has("gnucash_set_slot"));
+    REQUIRE(has("gnucash_update_split"));
+    REQUIRE(has("gnucash_reconcile_account"));
+    REQUIRE(has("gnucash_match_imported"));
+    REQUIRE(has("gnucash_bank_feed_status"));
+
+    // Should have at least 29 total
+    REQUIRE(all_tools.size() >= 29);
+}
+
+TEST_CASE("tool definitions: Phase 5 tools have valid schemas", "[mcp][tools][phase5]") {
+    auto all_tools = get_tool_definitions();
+
+    std::vector<std::string> phase5_names = {
+        "gnucash_import_ofx", "gnucash_import_csv", "gnucash_check_duplicates",
+        "gnucash_get_slots", "gnucash_set_slot", "gnucash_update_split",
+        "gnucash_reconcile_account", "gnucash_match_imported", "gnucash_bank_feed_status"
+    };
+
+    for (const auto& name : phase5_names) {
+        auto it = std::find_if(all_tools.begin(), all_tools.end(),
+            [&](const ToolDefinition& t) { return t.name == name; });
+        REQUIRE(it != all_tools.end());
+        REQUIRE(!it->description.empty());
+        REQUIRE(it->input_schema.type == "object");
+        REQUIRE(!it->input_schema.properties.empty());
+    }
+}
+
+TEST_CASE("tool filtering: bank-feed-importer agent tools", "[mcp][filtering][phase5]") {
+    gnucash::dhall::AgentConfig config;
+    config.name = "bank-feed-importer";
+    config.description = "Bank feed import";
+    config.tools = {
+        "gnucash_import_ofx", "gnucash_import_csv", "gnucash_check_duplicates",
+        "gnucash_get_slots", "gnucash_set_slot", "gnucash_account_tree",
+        "gnucash_bank_feed_status"
+    };
+    config.authorization_level = "Review";
+
+    set_agent_config(config);
+    auto tools = get_tool_definitions();
+    REQUIRE(tools.size() == 7);
+
+    std::vector<std::string> names;
+    for (const auto& t : tools) {
+        names.push_back(t.name);
+    }
+
+    auto has = [&](const std::string& n) {
+        return std::find(names.begin(), names.end(), n) != names.end();
+    };
+
+    REQUIRE(has("gnucash_import_ofx"));
+    REQUIRE(has("gnucash_import_csv"));
+    REQUIRE(has("gnucash_bank_feed_status"));
+    REQUIRE_FALSE(has("gnucash_reconcile_account")); // Not in this agent
+}
+
+TEST_CASE("tool filtering: reconciler agent tools", "[mcp][filtering][phase5]") {
+    gnucash::dhall::AgentConfig config;
+    config.name = "reconciler";
+    config.description = "Reconciliation";
+    config.tools = {
+        "gnucash_reconcile_account", "gnucash_match_imported",
+        "gnucash_get_splits", "gnucash_get_balance",
+        "gnucash_account_tree", "gnucash_bank_feed_status",
+        "gnucash_update_split"
+    };
+    config.authorization_level = "Approve";
+
+    set_agent_config(config);
+    auto tools = get_tool_definitions();
+    REQUIRE(tools.size() == 7);
+
+    std::vector<std::string> names;
+    for (const auto& t : tools) {
+        names.push_back(t.name);
+    }
+
+    auto has = [&](const std::string& n) {
+        return std::find(names.begin(), names.end(), n) != names.end();
+    };
+
+    REQUIRE(has("gnucash_reconcile_account"));
+    REQUIRE(has("gnucash_match_imported"));
+    REQUIRE(has("gnucash_update_split"));
+    REQUIRE_FALSE(has("gnucash_import_ofx")); // Not in this agent
+}

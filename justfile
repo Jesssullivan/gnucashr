@@ -159,7 +159,7 @@ mcp-audit book *filters='':
 
 # Type-check agent configs
 mcp-check-agents:
-    @for agent in spend-monitor report-generator transaction-categorizer; do \
+    @for agent in spend-monitor report-generator transaction-categorizer invoice-generator tax-estimator subscription-manager bill-pay bank-feed-importer reconciler; do \
         echo "Checking dhall/agents/$$agent.dhall..."; \
         dhall type --file dhall/agents/$$agent.dhall > /dev/null && echo "  ✓ Valid" || echo "  ✗ Error"; \
     done
@@ -189,6 +189,43 @@ agent-status agent book:
 agent-review book agent="transaction-categorizer":
     @echo "Review queue: {{book}}.agent.{{agent}}.db"
     @sqlite3 "{{book}}.agent.{{agent}}.db" "SELECT id, transaction_guid, suggested_category, confidence, status FROM review_queue WHERE status='pending' LIMIT 20" 2>/dev/null || echo "  (no pending reviews)"
+
+# ============================================================
+# Security (Week 7)
+# ============================================================
+
+# Run security tests (Catch2)
+security-test: cpp-build
+    cd lib/gnucash-core/build && ctest --output-on-failure -R "security|identity|classify|rate|approval|anomaly|amount"
+
+# Run MCP server with security enforcement
+security-run book *args='':
+    cd lib/gnucash-core/build && ./gnucash-bridge --enforce {{args}}
+
+# Show pending approval requests for a book
+security-approvals book:
+    @echo "Approval DB: {{book}}.approvals.db"
+    @sqlite3 "{{book}}.approvals.db" "SELECT id, agent_name, tool_name, status, created_at FROM approval_requests ORDER BY created_at DESC LIMIT 20" 2>/dev/null || echo "  (no approval DB)"
+
+# Approve a pending request
+security-approve book id approver:
+    @sqlite3 "{{book}}.approvals.db" "UPDATE approval_requests SET status='approved', approver='{{approver}}', resolved_at=datetime('now') WHERE id='{{id}}' AND status='pending'"
+
+# ============================================================
+# Bank Feed Import (Phase 5)
+# ============================================================
+
+# Import OFX bank statement into a GnuCash book
+import-ofx book ofx_file account_path imbalance="Imbalance-USD":
+    cd lib/gnucash-core/build && echo '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"gnucash_import_ofx","arguments":{"content":"'"$(cat {{ofx_file}})"'","account_path":"{{account_path}}","imbalance_account":"{{imbalance}}"}},"id":1}' | ./gnucash-bridge --book {{book}}
+
+# Import CSV bank statement into a GnuCash book
+import-csv book csv_file format account_path imbalance="Imbalance-USD":
+    cd lib/gnucash-core/build && echo '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"gnucash_import_csv","arguments":{"content":"'"$(cat {{csv_file}})"'","format":"{{format}}","account_path":"{{account_path}}","imbalance_account":"{{imbalance}}"}},"id":1}' | ./gnucash-bridge --book {{book}}
+
+# Check bank feed import status for an account
+bank-feed-status book account_path="":
+    cd lib/gnucash-core/build && echo '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"gnucash_bank_feed_status","arguments":{"account_path":"{{account_path}}"}},"id":1}' | ./gnucash-bridge --book {{book}}
 
 # ============================================================
 # Development Utilities

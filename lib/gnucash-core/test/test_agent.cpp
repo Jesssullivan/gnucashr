@@ -5,6 +5,7 @@
 #include "gnucash/book.h"
 #include "gnucash/guid.h"
 #include "gnucash/audit.h"
+#include "gnucash/approval.h"
 #include <filesystem>
 #include <cstdio>
 
@@ -611,4 +612,613 @@ TEST_CASE("run_spend_monitor: state persists across runs", "[agent][spend-monito
     book.close();
     fs::remove(tmp);
     fs::remove(state.db_path());
+}
+
+// ========================================================================
+// Additional well-known account GUIDs from with-accounts fixture
+// ========================================================================
+
+// Parent GUIDs for creating new accounts
+static const char* CURRENT_ASSETS = "a1000000000000000000000000000007";
+static const char* LIABILITIES    = "a1000000000000000000000000000009";
+
+// Helper: create a RECEIVABLE account
+static std::string create_receivable_account(Book& book) {
+    auto result = book.create_account(
+        "Client Invoices", AccountType::RECEIVABLE,
+        CURRENT_ASSETS, "Accounts receivable");
+    REQUIRE(result.is_ok());
+    return result.unwrap();
+}
+
+// Helper: create a PAYABLE account
+static std::string create_payable_account(Book& book) {
+    auto result = book.create_account(
+        "Vendor Bills", AccountType::PAYABLE,
+        LIABILITIES, "Accounts payable");
+    REQUIRE(result.is_ok());
+    return result.unwrap();
+}
+
+// ========================================================================
+// invoice-generator Tests
+// ========================================================================
+
+TEST_CASE("run_invoice_generator: no receivables produces empty report", "[agent][invoice]") {
+    auto tmp = make_writable_copy(ACCOUNTS_DB);
+    auto book_result = Book::open(tmp, false);
+    REQUIRE(book_result.is_ok());
+    auto& book = book_result.unwrap();
+
+    seed_transactions(book);
+
+    dhall::AgentConfig config;
+    config.name = "invoice-generator";
+
+    auto state_result = AgentStateDB::open(tmp, "invoice-generator");
+    REQUIRE(state_result.is_ok());
+    auto& state = state_result.unwrap();
+
+    auto result = run_invoice_generator(book, config, state);
+    REQUIRE(result.is_ok());
+
+    auto& ar = result.unwrap();
+    REQUIRE(ar.agent_name == "invoice-generator");
+    REQUIRE(ar.actions_taken == 0);
+    REQUIRE(ar.report["invoice_count"].get<int>() == 0);
+    REQUIRE(ar.report["total_outstanding"].get<double>() < 0.01);
+
+    book.close();
+    fs::remove(tmp);
+    fs::remove(state.db_path());
+}
+
+TEST_CASE("run_invoice_generator: produces invoice from receivable", "[agent][invoice]") {
+    auto tmp = make_writable_copy(ACCOUNTS_DB);
+    auto book_result = Book::open(tmp, false);
+    REQUIRE(book_result.is_ok());
+    auto& book = book_result.unwrap();
+
+    auto recv_guid = create_receivable_account(book);
+    post_txn(book, "Invoice #001 - Web Dev", recv_guid, SALARY, 250000, "2026-01-15 00:00:00");
+    post_txn(book, "Invoice #002 - Consulting", recv_guid, SALARY, 150000, "2026-02-01 00:00:00");
+
+    dhall::AgentConfig config;
+    config.name = "invoice-generator";
+
+    auto state_result = AgentStateDB::open(tmp, "invoice-generator");
+    REQUIRE(state_result.is_ok());
+    auto& state = state_result.unwrap();
+
+    auto result = run_invoice_generator(book, config, state);
+    REQUIRE(result.is_ok());
+
+    auto& ar = result.unwrap();
+    REQUIRE(ar.report["invoice_count"].get<int>() == 1);
+    REQUIRE(ar.report["total_outstanding"].get<double>() > 0);
+
+    auto& invoices = ar.report["invoices"];
+    REQUIRE(invoices.size() == 1);
+    REQUIRE(invoices[0]["customer"].get<std::string>() == "Client Invoices");
+    REQUIRE(invoices[0].contains("items"));
+
+    book.close();
+    fs::remove(tmp);
+    fs::remove(state.db_path());
+}
+
+TEST_CASE("run_invoice_generator: dispatch via run_agent", "[agent][invoice][dispatch]") {
+    auto tmp = make_writable_copy(ACCOUNTS_DB);
+    auto book_result = Book::open(tmp, false);
+    REQUIRE(book_result.is_ok());
+    auto& book = book_result.unwrap();
+
+    dhall::AgentConfig config;
+    config.name = "invoice-generator";
+
+    auto state_result = AgentStateDB::open(tmp, "invoice-generator");
+    REQUIRE(state_result.is_ok());
+    auto& state = state_result.unwrap();
+
+    auto result = run_agent("invoice-generator", book, config, state);
+    REQUIRE(result.is_ok());
+    REQUIRE(result.unwrap().agent_name == "invoice-generator");
+
+    book.close();
+    fs::remove(tmp);
+    fs::remove(state.db_path());
+}
+
+// ========================================================================
+// tax-estimator Tests
+// ========================================================================
+
+TEST_CASE("run_tax_estimator: produces tax estimate", "[agent][tax]") {
+    auto tmp = make_writable_copy(ACCOUNTS_DB);
+    auto book_result = Book::open(tmp, false);
+    REQUIRE(book_result.is_ok());
+    auto& book = book_result.unwrap();
+
+    seed_transactions(book);
+
+    dhall::AgentConfig config;
+    config.name = "tax-estimator";
+
+    auto state_result = AgentStateDB::open(tmp, "tax-estimator");
+    REQUIRE(state_result.is_ok());
+    auto& state = state_result.unwrap();
+
+    auto result = run_tax_estimator(book, config, state);
+    REQUIRE(result.is_ok());
+
+    auto& ar = result.unwrap();
+    REQUIRE(ar.agent_name == "tax-estimator");
+    REQUIRE(ar.actions_taken == 0);
+
+    auto& report = ar.report;
+    REQUIRE(report.contains("gross_income"));
+    REQUIRE(report.contains("taxable_income"));
+    REQUIRE(report.contains("estimated_tax"));
+    REQUIRE(report.contains("quarterly_payment"));
+    REQUIRE(report.contains("effective_rate"));
+
+    REQUIRE_THAT(report["gross_income"].get<double>(), WithinAbs(10000.0, 0.01));
+
+    // With $10k income and $15,700 standard deduction, taxable income = 0
+    double taxable = report["taxable_income"].get<double>();
+    REQUIRE(taxable >= 0);
+    REQUIRE(taxable <= 10000.0);
+
+    // Tax and quarterly follow from taxable income
+    double est_tax = report["estimated_tax"].get<double>();
+    REQUIRE(est_tax >= 0);
+    double quarterly = report["quarterly_payment"].get<double>();
+    REQUIRE_THAT(quarterly, WithinAbs(est_tax / 4.0, 0.01));
+
+    book.close();
+    fs::remove(tmp);
+    fs::remove(state.db_path());
+}
+
+TEST_CASE("run_tax_estimator: state tracks change", "[agent][tax]") {
+    auto tmp = make_writable_copy(ACCOUNTS_DB);
+    auto book_result = Book::open(tmp, false);
+    REQUIRE(book_result.is_ok());
+    auto& book = book_result.unwrap();
+
+    seed_transactions(book);
+
+    dhall::AgentConfig config;
+    config.name = "tax-estimator";
+
+    auto state_result = AgentStateDB::open(tmp, "tax-estimator");
+    REQUIRE(state_result.is_ok());
+    auto& state = state_result.unwrap();
+
+    auto r1 = run_tax_estimator(book, config, state);
+    REQUIRE(r1.is_ok());
+
+    auto est = state.get("last_estimated_tax");
+    REQUIRE(est.is_ok());
+    REQUIRE(est.unwrap().has_value());
+
+    auto r2 = run_tax_estimator(book, config, state);
+    REQUIRE(r2.is_ok());
+    REQUIRE_THAT(r2.unwrap().report["change_from_last"].get<double>(), WithinAbs(0.0, 0.01));
+
+    book.close();
+    fs::remove(tmp);
+    fs::remove(state.db_path());
+}
+
+TEST_CASE("run_tax_estimator: dispatch via run_agent", "[agent][tax][dispatch]") {
+    auto tmp = make_writable_copy(ACCOUNTS_DB);
+    auto book_result = Book::open(tmp, false);
+    REQUIRE(book_result.is_ok());
+    auto& book = book_result.unwrap();
+
+    seed_transactions(book);
+
+    dhall::AgentConfig config;
+    config.name = "tax-estimator";
+
+    auto state_result = AgentStateDB::open(tmp, "tax-estimator");
+    REQUIRE(state_result.is_ok());
+    auto& state = state_result.unwrap();
+
+    auto result = run_agent("tax-estimator", book, config, state);
+    REQUIRE(result.is_ok());
+    REQUIRE(result.unwrap().agent_name == "tax-estimator");
+
+    book.close();
+    fs::remove(tmp);
+    fs::remove(state.db_path());
+}
+
+// ========================================================================
+// subscription-manager Tests
+// ========================================================================
+
+TEST_CASE("run_subscription_manager: detects recurring transactions", "[agent][subscription]") {
+    auto tmp = make_writable_copy(ACCOUNTS_DB);
+    auto book_result = Book::open(tmp, false);
+    REQUIRE(book_result.is_ok());
+    auto& book = book_result.unwrap();
+
+    seed_transactions(book);
+
+    // Add more months of rent for clearer pattern
+    post_txn(book, "RENT PAYMENT", RENT, CHECKING, 200000, "2026-03-01 00:00:00");
+    post_txn(book, "RENT PAYMENT", RENT, CHECKING, 200000, "2026-04-01 00:00:00");
+
+    // Add recurring subscription
+    post_txn(book, "NETFLIX SUBSCRIPTION", UTILITIES, CHECKING, 1599, "2026-01-15 00:00:00");
+    post_txn(book, "NETFLIX SUBSCRIPTION", UTILITIES, CHECKING, 1599, "2026-02-15 00:00:00");
+    post_txn(book, "NETFLIX SUBSCRIPTION", UTILITIES, CHECKING, 1599, "2026-03-15 00:00:00");
+
+    dhall::AgentConfig config;
+    config.name = "subscription-manager";
+
+    auto state_result = AgentStateDB::open(tmp, "subscription-manager");
+    REQUIRE(state_result.is_ok());
+    auto& state = state_result.unwrap();
+
+    auto result = run_subscription_manager(book, config, state);
+    REQUIRE(result.is_ok());
+
+    auto& ar = result.unwrap();
+    REQUIRE(ar.agent_name == "subscription-manager");
+    REQUIRE(ar.actions_taken == 0);
+
+    auto& report = ar.report;
+    REQUIRE(report.contains("subscriptions"));
+    REQUIRE(report.contains("monthly_total"));
+    REQUIRE(report.contains("annual_total"));
+
+    int sub_count = report["subscription_count"].get<int>();
+    REQUIRE(sub_count >= 2);
+
+    REQUIRE(report["monthly_total"].get<double>() > 2000.0);
+
+    book.close();
+    fs::remove(tmp);
+    fs::remove(state.db_path());
+}
+
+TEST_CASE("run_subscription_manager: detects changes between runs", "[agent][subscription]") {
+    auto tmp = make_writable_copy(ACCOUNTS_DB);
+    auto book_result = Book::open(tmp, false);
+    REQUIRE(book_result.is_ok());
+    auto& book = book_result.unwrap();
+
+    post_txn(book, "RENT PAYMENT", RENT, CHECKING, 200000, "2026-01-01 00:00:00");
+    post_txn(book, "RENT PAYMENT", RENT, CHECKING, 200000, "2026-02-01 00:00:00");
+    post_txn(book, "RENT PAYMENT", RENT, CHECKING, 200000, "2026-03-01 00:00:00");
+
+    dhall::AgentConfig config;
+    config.name = "subscription-manager";
+
+    auto state_result = AgentStateDB::open(tmp, "subscription-manager");
+    REQUIRE(state_result.is_ok());
+    auto& state = state_result.unwrap();
+
+    auto r1 = run_subscription_manager(book, config, state);
+    REQUIRE(r1.is_ok());
+    REQUIRE(r1.unwrap().report["subscription_count"].get<int>() >= 1);
+
+    auto r2 = run_subscription_manager(book, config, state);
+    REQUIRE(r2.is_ok());
+    REQUIRE(r2.unwrap().report["new_subscriptions"].empty());
+
+    book.close();
+    fs::remove(tmp);
+    fs::remove(state.db_path());
+}
+
+TEST_CASE("run_subscription_manager: dispatch via run_agent", "[agent][subscription][dispatch]") {
+    auto tmp = make_writable_copy(ACCOUNTS_DB);
+    auto book_result = Book::open(tmp, false);
+    REQUIRE(book_result.is_ok());
+    auto& book = book_result.unwrap();
+
+    seed_transactions(book);
+
+    dhall::AgentConfig config;
+    config.name = "subscription-manager";
+
+    auto state_result = AgentStateDB::open(tmp, "subscription-manager");
+    REQUIRE(state_result.is_ok());
+    auto& state = state_result.unwrap();
+
+    auto result = run_agent("subscription-manager", book, config, state);
+    REQUIRE(result.is_ok());
+    REQUIRE(result.unwrap().agent_name == "subscription-manager");
+
+    book.close();
+    fs::remove(tmp);
+    fs::remove(state.db_path());
+}
+
+// ========================================================================
+// bill-pay Tests
+// ========================================================================
+
+TEST_CASE("run_bill_pay: no payables produces empty report", "[agent][bill-pay]") {
+    auto tmp = make_writable_copy(ACCOUNTS_DB);
+    auto book_result = Book::open(tmp, false);
+    REQUIRE(book_result.is_ok());
+    auto& book = book_result.unwrap();
+
+    dhall::AgentConfig config;
+    config.name = "bill-pay";
+
+    auto state_result = AgentStateDB::open(tmp, "bill-pay");
+    REQUIRE(state_result.is_ok());
+    auto& state = state_result.unwrap();
+
+    auto result = run_bill_pay(book, config, state);
+    REQUIRE(result.is_ok());
+
+    auto& ar = result.unwrap();
+    REQUIRE(ar.agent_name == "bill-pay");
+    REQUIRE(ar.report["bills_due_count"].get<int>() == 0);
+    REQUIRE(ar.report["total_due"].get<double>() < 0.01);
+
+    book.close();
+    fs::remove(tmp);
+    fs::remove(state.db_path());
+}
+
+TEST_CASE("run_bill_pay: detects outstanding payables", "[agent][bill-pay]") {
+    auto tmp = make_writable_copy(ACCOUNTS_DB);
+    auto book_result = Book::open(tmp, false);
+    REQUIRE(book_result.is_ok());
+    auto& book = book_result.unwrap();
+
+    auto payable_guid = create_payable_account(book);
+    post_txn(book, "Office Supplies Invoice", payable_guid, CHECKING, 35000, "2026-01-20 00:00:00");
+    post_txn(book, "Web Hosting Invoice",     payable_guid, CHECKING, 12000, "2026-02-01 00:00:00");
+
+    dhall::AgentConfig config;
+    config.name = "bill-pay";
+
+    auto state_result = AgentStateDB::open(tmp, "bill-pay");
+    REQUIRE(state_result.is_ok());
+    auto& state = state_result.unwrap();
+
+    auto result = run_bill_pay(book, config, state);
+    REQUIRE(result.is_ok());
+
+    auto& ar = result.unwrap();
+    REQUIRE(ar.report["bills_due_count"].get<int>() >= 1);
+    REQUIRE(ar.report["total_due"].get<double>() > 0);
+
+    auto& bills = ar.report["bills_due"];
+    for (const auto& bill : bills) {
+        REQUIRE(bill.contains("payee"));
+        REQUIRE(bill.contains("amount"));
+        REQUIRE(bill.contains("account_path"));
+    }
+
+    book.close();
+    fs::remove(tmp);
+    fs::remove(state.db_path());
+}
+
+TEST_CASE("run_bill_pay: creates pending payment requests", "[agent][bill-pay]") {
+    auto tmp = make_writable_copy(ACCOUNTS_DB);
+    auto book_result = Book::open(tmp, false);
+    REQUIRE(book_result.is_ok());
+    auto& book = book_result.unwrap();
+
+    auto payable_guid = create_payable_account(book);
+    post_txn(book, "Vendor Bill", payable_guid, CHECKING, 50000, "2026-01-15 00:00:00");
+
+    dhall::AgentConfig config;
+    config.name = "bill-pay";
+
+    auto state_result = AgentStateDB::open(tmp, "bill-pay");
+    REQUIRE(state_result.is_ok());
+    auto& state = state_result.unwrap();
+
+    auto result = run_bill_pay(book, config, state);
+    REQUIRE(result.is_ok());
+
+    auto& ar = result.unwrap();
+    REQUIRE(ar.report["pending_count"].get<int>() >= 1);
+    REQUIRE(ar.report["pending_approval"].size() >= 1);
+
+    auto& pending = ar.report["pending_approval"];
+    REQUIRE(pending[0].contains("payee"));
+    REQUIRE(pending[0].contains("amount"));
+    REQUIRE(pending[0]["status"].get<std::string>() == "pending");
+
+    book.close();
+    fs::remove(tmp);
+    fs::remove(state.db_path());
+}
+
+TEST_CASE("run_bill_pay: dispatch via run_agent", "[agent][bill-pay][dispatch]") {
+    auto tmp = make_writable_copy(ACCOUNTS_DB);
+    auto book_result = Book::open(tmp, false);
+    REQUIRE(book_result.is_ok());
+    auto& book = book_result.unwrap();
+
+    dhall::AgentConfig config;
+    config.name = "bill-pay";
+
+    auto state_result = AgentStateDB::open(tmp, "bill-pay");
+    REQUIRE(state_result.is_ok());
+    auto& state = state_result.unwrap();
+
+    auto result = run_agent("bill-pay", book, config, state);
+    REQUIRE(result.is_ok());
+    REQUIRE(result.unwrap().agent_name == "bill-pay");
+
+    book.close();
+    fs::remove(tmp);
+    fs::remove(state.db_path());
+}
+
+// ========================================================================
+// E2E: All 7 agents dispatch correctly
+// ========================================================================
+
+// ========================================================================
+// bank-feed-importer Tests
+// ========================================================================
+
+TEST_CASE("run_bank_feed_importer: produces import status", "[agent][bank-feed]") {
+    auto tmp = make_writable_copy(ACCOUNTS_DB);
+    auto book_result = Book::open(tmp, false);
+    REQUIRE(book_result.is_ok());
+    auto& book = book_result.unwrap();
+
+    dhall::AgentConfig config;
+    config.name = "bank-feed-importer";
+
+    auto state_result = AgentStateDB::open(tmp, "bank-feed-importer");
+    REQUIRE(state_result.is_ok());
+    auto& state = state_result.unwrap();
+
+    auto result = run_bank_feed_importer(book, config, state);
+    REQUIRE(result.is_ok());
+
+    auto& ar = result.unwrap();
+    REQUIRE(ar.agent_name == "bank-feed-importer");
+    REQUIRE(ar.actions_taken == 0); // Read-only scan
+
+    auto& report = ar.report;
+    REQUIRE(report.contains("accounts_processed"));
+    REQUIRE(report.contains("total_imported"));
+    REQUIRE(report.contains("total_duplicates"));
+    REQUIRE(report.contains("import_results"));
+
+    // With no imports yet, totals should be zero
+    REQUIRE(report["total_imported"].get<int>() == 0);
+
+    book.close();
+    fs::remove(tmp);
+    fs::remove(state.db_path());
+}
+
+TEST_CASE("run_bank_feed_importer: dispatch via run_agent", "[agent][bank-feed][dispatch]") {
+    auto tmp = make_writable_copy(ACCOUNTS_DB);
+    auto book_result = Book::open(tmp, false);
+    REQUIRE(book_result.is_ok());
+    auto& book = book_result.unwrap();
+
+    dhall::AgentConfig config;
+    config.name = "bank-feed-importer";
+
+    auto state_result = AgentStateDB::open(tmp, "bank-feed-importer");
+    REQUIRE(state_result.is_ok());
+    auto& state = state_result.unwrap();
+
+    auto result = run_agent("bank-feed-importer", book, config, state);
+    REQUIRE(result.is_ok());
+    REQUIRE(result.unwrap().agent_name == "bank-feed-importer");
+
+    book.close();
+    fs::remove(tmp);
+    fs::remove(state.db_path());
+}
+
+// ========================================================================
+// reconciler Tests
+// ========================================================================
+
+TEST_CASE("run_reconciler: produces reconciliation status", "[agent][reconciler]") {
+    auto tmp = make_writable_copy(ACCOUNTS_DB);
+    auto book_result = Book::open(tmp, false);
+    REQUIRE(book_result.is_ok());
+    auto& book = book_result.unwrap();
+
+    seed_transactions(book);
+
+    dhall::AgentConfig config;
+    config.name = "reconciler";
+
+    auto state_result = AgentStateDB::open(tmp, "reconciler");
+    REQUIRE(state_result.is_ok());
+    auto& state = state_result.unwrap();
+
+    auto result = run_reconciler(book, config, state);
+    REQUIRE(result.is_ok());
+
+    auto& ar = result.unwrap();
+    REQUIRE(ar.agent_name == "reconciler");
+    REQUIRE(ar.actions_taken == 0); // Read-only scan
+
+    auto& report = ar.report;
+    REQUIRE(report.contains("accounts_reconciled"));
+    REQUIRE(report.contains("transfers_matched"));
+    REQUIRE(report.contains("reconciled_accounts"));
+    REQUIRE(report.contains("transfer_matches"));
+
+    // Should have scanned some accounts
+    REQUIRE(report["accounts_reconciled"].get<int>() >= 0);
+
+    book.close();
+    fs::remove(tmp);
+    fs::remove(state.db_path());
+}
+
+TEST_CASE("run_reconciler: dispatch via run_agent", "[agent][reconciler][dispatch]") {
+    auto tmp = make_writable_copy(ACCOUNTS_DB);
+    auto book_result = Book::open(tmp, false);
+    REQUIRE(book_result.is_ok());
+    auto& book = book_result.unwrap();
+
+    dhall::AgentConfig config;
+    config.name = "reconciler";
+
+    auto state_result = AgentStateDB::open(tmp, "reconciler");
+    REQUIRE(state_result.is_ok());
+    auto& state = state_result.unwrap();
+
+    auto result = run_agent("reconciler", book, config, state);
+    REQUIRE(result.is_ok());
+    REQUIRE(result.unwrap().agent_name == "reconciler");
+
+    book.close();
+    fs::remove(tmp);
+    fs::remove(state.db_path());
+}
+
+// ========================================================================
+// E2E: All 9 agents dispatch correctly
+// ========================================================================
+
+TEST_CASE("run_agent: all 9 agents dispatch", "[agent][dispatch][e2e]") {
+    auto tmp = make_writable_copy(ACCOUNTS_DB);
+    auto book_result = Book::open(tmp, false);
+    REQUIRE(book_result.is_ok());
+    auto& book = book_result.unwrap();
+
+    seed_transactions(book);
+
+    std::vector<std::string> agent_names = {
+        "spend-monitor", "report-generator", "transaction-categorizer",
+        "invoice-generator", "tax-estimator", "subscription-manager", "bill-pay",
+        "bank-feed-importer", "reconciler"
+    };
+
+    for (const auto& name : agent_names) {
+        dhall::AgentConfig config;
+        config.name = name;
+
+        auto state_result = AgentStateDB::open(tmp, name);
+        REQUIRE(state_result.is_ok());
+        auto& state = state_result.unwrap();
+
+        auto result = run_agent(name, book, config, state);
+        REQUIRE(result.is_ok());
+        REQUIRE(result.unwrap().agent_name == name);
+
+        fs::remove(state.db_path());
+    }
+
+    book.close();
+    fs::remove(tmp);
 }

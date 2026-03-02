@@ -4,6 +4,10 @@
 #include <gnucash/fraction.h>
 #include <gnucash/guid.h>
 #include <gnucash/ofx.h>
+#include <gnucash/csv.h>
+#include <gnucash/slots.h>
+#include <gnucash/bank_feed.h>
+#include <gnucash/reconcile.h>
 #include <iostream>
 #include <memory>
 #include <optional>
@@ -379,6 +383,8 @@ static json handle_parse_ofx(const json& params, const json& id) {
         txns.push_back({
             {"date", t.date},
             {"amount", t.amount},
+            {"amount_num", t.amount_fraction.num},
+            {"amount_denom", t.amount_fraction.denom},
             {"name", t.name},
             {"fitid", t.fitid},
             {"memo", t.memo},
@@ -401,6 +407,328 @@ static json handle_parse_ofx(const json& params, const json& id) {
         }},
         {"transactions", txns}
     }, id);
+}
+
+// --- Import / Reconcile handlers ---
+
+static json handle_import_ofx(const json& params, const json& id) {
+    if (!g_book) return make_error("no book open", id);
+    if (!params.contains("content"))
+        return make_error("missing required param: content", id);
+    if (!params.contains("account_path"))
+        return make_error("missing required param: account_path", id);
+
+    std::string content = params["content"].get<std::string>();
+    std::string account_path = params["account_path"].get<std::string>();
+    std::string imbalance_path = params.value("imbalance_account", "Imbalance-USD");
+
+    // Resolve account paths to GUIDs
+    auto acct = g_book->get_account_by_path(account_path);
+    if (!acct) return make_error("Account not found: " + account_path, id);
+
+    auto imbalance = g_book->get_account_by_path(imbalance_path);
+    if (!imbalance) return make_error("Imbalance account not found: " + imbalance_path, id);
+
+    auto result = import_ofx(*g_book, content, acct->guid, imbalance->guid);
+    if (result.is_err()) return make_error(result.unwrap_err(), id);
+
+    auto& r = result.unwrap();
+    json errors_json = json::array();
+    for (const auto& e : r.error_messages) errors_json.push_back(e);
+
+    return make_result({
+        {"total_parsed", r.total_parsed},
+        {"imported", r.imported},
+        {"duplicates", r.duplicates},
+        {"errors", r.errors},
+        {"imported_guids", r.imported_guids},
+        {"error_messages", errors_json}
+    }, id);
+}
+
+static json handle_import_csv(const json& params, const json& id) {
+    if (!g_book) return make_error("no book open", id);
+    if (!params.contains("content"))
+        return make_error("missing required param: content", id);
+    if (!params.contains("account_path"))
+        return make_error("missing required param: account_path", id);
+
+    std::string content = params["content"].get<std::string>();
+    std::string account_path = params["account_path"].get<std::string>();
+    std::string imbalance_path = params.value("imbalance_account", "Imbalance-USD");
+    std::string format_name = params.value("format", "generic");
+
+    // Resolve format
+    CsvFormat format;
+    if (format_name == "paypal") format = paypal_format();
+    else if (format_name == "stripe") format = stripe_format();
+    else if (format_name == "venmo") format = venmo_format();
+    else if (format_name == "apple_card") format = apple_card_format();
+    else format = generic_format();
+
+    // Allow generic format override
+    if (format_name == "generic" && params.contains("delimiter"))
+        format.delimiter = params["delimiter"].get<std::string>()[0];
+    if (params.contains("date_col")) format.date_col = params["date_col"].get<int>();
+    if (params.contains("amount_col")) format.amount_col = params["amount_col"].get<int>();
+    if (params.contains("desc_col")) format.desc_col = params["desc_col"].get<int>();
+    if (params.contains("date_format")) format.date_format = params["date_format"].get<std::string>();
+    if (params.contains("has_header")) format.has_header = params["has_header"].get<bool>();
+
+    // Resolve account paths
+    auto acct = g_book->get_account_by_path(account_path);
+    if (!acct) return make_error("Account not found: " + account_path, id);
+
+    auto imbalance = g_book->get_account_by_path(imbalance_path);
+    if (!imbalance) return make_error("Imbalance account not found: " + imbalance_path, id);
+
+    auto result = import_csv(*g_book, content, format, acct->guid, imbalance->guid);
+    if (result.is_err()) return make_error(result.unwrap_err(), id);
+
+    auto& r = result.unwrap();
+    json errors_json = json::array();
+    for (const auto& e : r.error_messages) errors_json.push_back(e);
+
+    return make_result({
+        {"total_parsed", r.total_parsed},
+        {"imported", r.imported},
+        {"duplicates", r.duplicates},
+        {"errors", r.errors},
+        {"imported_guids", r.imported_guids},
+        {"error_messages", errors_json}
+    }, id);
+}
+
+static json handle_check_duplicates(const json& params, const json& id) {
+    if (!g_book) return make_error("no book open", id);
+    if (!params.contains("account_path"))
+        return make_error("missing required param: account_path", id);
+    if (!params.contains("fitids"))
+        return make_error("missing required param: fitids", id);
+
+    std::string account_path = params["account_path"].get<std::string>();
+    auto acct = g_book->get_account_by_path(account_path);
+    if (!acct) return make_error("Account not found: " + account_path, id);
+
+    std::vector<std::string> fitids;
+    for (const auto& f : params["fitids"]) fitids.push_back(f.get<std::string>());
+
+    auto result = check_duplicates(*g_book, acct->guid, fitids);
+
+    json duplicates = json::object();
+    for (const auto& [fitid, split_guid] : result) {
+        duplicates[fitid] = split_guid;
+    }
+
+    return make_result({
+        {"total_checked", static_cast<int>(fitids.size())},
+        {"duplicates_found", static_cast<int>(result.size())},
+        {"duplicates", duplicates}
+    }, id);
+}
+
+static json handle_get_slots(const json& params, const json& id) {
+    if (!g_book) return make_error("no book open", id);
+    if (!params.contains("obj_guid"))
+        return make_error("missing required param: obj_guid", id);
+
+    std::string obj_guid = params["obj_guid"].get<std::string>();
+    ensure_slots_table(g_book->raw_db());
+
+    if (params.contains("name")) {
+        // Get single slot
+        std::string name = params["name"].get<std::string>();
+        auto slot = get_slot(g_book->raw_db(), obj_guid, name);
+        if (!slot) return make_result(json(nullptr), id);
+
+        return make_result({
+            {"name", slot->name},
+            {"slot_type", static_cast<int>(slot->slot_type)},
+            {"string_val", slot->string_val},
+            {"int64_val", slot->int64_val},
+            {"double_val", slot->double_val}
+        }, id);
+    } else {
+        // Get all slots
+        auto slots = get_all_slots(g_book->raw_db(), obj_guid);
+        json slots_json = json::array();
+        for (const auto& s : slots) {
+            slots_json.push_back({
+                {"name", s.name},
+                {"slot_type", static_cast<int>(s.slot_type)},
+                {"string_val", s.string_val},
+                {"int64_val", s.int64_val},
+                {"double_val", s.double_val}
+            });
+        }
+        return make_result({{"slots", slots_json}}, id);
+    }
+}
+
+static json handle_set_slot(const json& params, const json& id) {
+    if (!g_book) return make_error("no book open", id);
+    if (!params.contains("obj_guid") || !params.contains("name") || !params.contains("value"))
+        return make_error("missing required params: obj_guid, name, value", id);
+
+    std::string obj_guid = params["obj_guid"].get<std::string>();
+    std::string name = params["name"].get<std::string>();
+    std::string value = params["value"].get<std::string>();
+
+    ensure_slots_table(g_book->raw_db());
+    auto result = set_slot(g_book->raw_db(), obj_guid, name, value);
+    if (result.is_err()) return make_error(result.unwrap_err(), id);
+
+    return make_result({{"status", "ok"}}, id);
+}
+
+static json handle_update_split(const json& params, const json& id) {
+    if (!g_book) return make_error("no book open", id);
+    if (!params.contains("split_guid") || !params.contains("new_account_path"))
+        return make_error("missing required params: split_guid, new_account_path", id);
+
+    std::string split_guid = params["split_guid"].get<std::string>();
+    std::string account_path = params["new_account_path"].get<std::string>();
+
+    auto acct = g_book->get_account_by_path(account_path);
+    if (!acct) return make_error("Account not found: " + account_path, id);
+
+    auto result = g_book->update_split(split_guid, acct->guid);
+    if (result.is_err()) return make_error(result.unwrap_err(), id);
+
+    return make_result({
+        {"status", "ok"},
+        {"split_guid", split_guid},
+        {"new_account_guid", acct->guid},
+        {"new_account_path", acct->full_path}
+    }, id);
+}
+
+static json handle_reconcile_account(const json& params, const json& id) {
+    if (!g_book) return make_error("no book open", id);
+    if (!params.contains("account_path") || !params.contains("statement_date") ||
+        !params.contains("statement_balance"))
+        return make_error("missing required params: account_path, statement_date, statement_balance", id);
+
+    std::string account_path = params["account_path"].get<std::string>();
+    std::string statement_date = params["statement_date"].get<std::string>();
+    auto statement_balance = Fraction::from_string(
+        params["statement_balance"].get<std::string>());
+
+    auto acct = g_book->get_account_by_path(account_path);
+    if (!acct) return make_error("Account not found: " + account_path, id);
+
+    auto result = reconcile_account(*g_book, acct->guid, statement_date, statement_balance);
+    if (result.is_err()) return make_error(result.unwrap_err(), id);
+
+    auto& r = result.unwrap();
+    return make_result({
+        {"splits_reconciled", r.splits_reconciled},
+        {"statement_balance", fraction_to_json(r.statement_balance)},
+        {"book_balance", fraction_to_json(r.book_balance)},
+        {"difference", fraction_to_json(r.difference)},
+        {"balanced", r.balanced}
+    }, id);
+}
+
+static json handle_match_imported(const json& params, const json& id) {
+    if (!g_book) return make_error("no book open", id);
+    if (!params.contains("account_a_path") || !params.contains("account_b_path"))
+        return make_error("missing required params: account_a_path, account_b_path", id);
+
+    std::string a_path = params["account_a_path"].get<std::string>();
+    std::string b_path = params["account_b_path"].get<std::string>();
+    std::string from_date = params.value("from_date", "2000-01-01");
+    std::string to_date = params.value("to_date", "2099-12-31");
+    int date_window = params.value("date_window", 3);
+    double min_similarity = params.value("min_similarity", 0.5);
+
+    auto acct_a = g_book->get_account_by_path(a_path);
+    if (!acct_a) return make_error("Account not found: " + a_path, id);
+
+    auto acct_b = g_book->get_account_by_path(b_path);
+    if (!acct_b) return make_error("Account not found: " + b_path, id);
+
+    auto matches = find_cross_institution_matches(
+        *g_book, acct_a->guid, acct_b->guid, from_date, to_date,
+        date_window, min_similarity);
+
+    json matches_json = json::array();
+    for (const auto& m : matches) {
+        matches_json.push_back({
+            {"split_a_guid", m.split_a_guid},
+            {"split_b_guid", m.split_b_guid},
+            {"tx_a_guid", m.tx_a_guid},
+            {"tx_b_guid", m.tx_b_guid},
+            {"amount", fraction_to_json(m.amount)},
+            {"date_a", m.date_a},
+            {"date_b", m.date_b},
+            {"desc_a", m.desc_a},
+            {"desc_b", m.desc_b},
+            {"similarity", m.similarity}
+        });
+    }
+
+    return make_result({
+        {"matches", matches_json},
+        {"total_matches", static_cast<int>(matches.size())}
+    }, id);
+}
+
+static json handle_bank_feed_status(const json& params, const json& id) {
+    if (!g_book) return make_error("no book open", id);
+
+    ensure_slots_table(g_book->raw_db());
+
+    // If account_path provided, show import status for that account
+    if (params.contains("account_path")) {
+        std::string account_path = params["account_path"].get<std::string>();
+        auto acct = g_book->get_account_by_path(account_path);
+        if (!acct) return make_error("Account not found: " + account_path, id);
+
+        // Count splits with online_id slots (imported transactions)
+        auto splits = g_book->get_splits_for_account(acct->guid);
+        int imported_count = 0;
+        int unreconciled_count = 0;
+
+        for (const auto& s : splits) {
+            auto slot = get_slot(g_book->raw_db(), s.guid, "online_id");
+            if (slot) imported_count++;
+            if (s.reconcile_state == ReconcileState::NOT_RECONCILED)
+                unreconciled_count++;
+        }
+
+        return make_result({
+            {"account_path", account_path},
+            {"account_guid", acct->guid},
+            {"total_splits", static_cast<int>(splits.size())},
+            {"imported_count", imported_count},
+            {"unreconciled_count", unreconciled_count}
+        }, id);
+    }
+
+    // No account specified -- summary of all accounts with imported transactions
+    auto accounts = g_book->account_tree();
+    json summary = json::array();
+    for (const auto& acct : accounts) {
+        auto splits = g_book->get_splits_for_account(acct.guid);
+        if (splits.empty()) continue;
+
+        int imported = 0;
+        for (const auto& s : splits) {
+            auto slot = get_slot(g_book->raw_db(), s.guid, "online_id");
+            if (slot) imported++;
+        }
+        if (imported == 0) continue;
+
+        summary.push_back({
+            {"account_path", acct.full_path},
+            {"account_guid", acct.guid},
+            {"total_splits", static_cast<int>(splits.size())},
+            {"imported_count", imported}
+        });
+    }
+
+    return make_result({{"accounts", summary}}, id);
 }
 
 // --- Dispatch ---
@@ -439,6 +767,15 @@ json dispatch(const json& request) {
         if (method == "delete_transaction") return handle_delete_transaction(params, id);
         if (method == "void_transaction")  return handle_void_transaction(params, id);
         if (method == "parse_ofx")         return handle_parse_ofx(params, id);
+        if (method == "import_ofx")        return handle_import_ofx(params, id);
+        if (method == "import_csv")        return handle_import_csv(params, id);
+        if (method == "check_duplicates")  return handle_check_duplicates(params, id);
+        if (method == "get_slots")         return handle_get_slots(params, id);
+        if (method == "set_slot")          return handle_set_slot(params, id);
+        if (method == "update_split")      return handle_update_split(params, id);
+        if (method == "reconcile_account") return handle_reconcile_account(params, id);
+        if (method == "match_imported")    return handle_match_imported(params, id);
+        if (method == "bank_feed_status")  return handle_bank_feed_status(params, id);
 
         return make_error("unknown method: " + method, id);
     } catch (const std::exception& e) {

@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "gnucash": {
+      "command": "./lib/gnucash-core/build/gnucash-bridge",
+      "args": ["--mcp"],
+      "env": {}
+    }
+  }
+}

@@ -103,6 +103,105 @@ Result<AgentResult> run_categorizer(Book& book, const dhall::AgentConfig& config
                                      AgentStateDB& state);
 
 // ========================================================================
+// invoice-generator
+// ========================================================================
+
+struct InvoiceReport {
+    json invoices;                  // [{customer, items, subtotal, tax, total}]
+    double total_outstanding;
+    int overdue_count;
+    int invoice_count;
+};
+
+Result<AgentResult> run_invoice_generator(Book& book, const dhall::AgentConfig& config,
+                                           AgentStateDB& state);
+
+// ========================================================================
+// tax-estimator
+// ========================================================================
+
+struct TaxEstimate {
+    double gross_income;
+    double deductions;
+    double taxable_income;
+    double estimated_tax;
+    double quarterly_payment;
+    double effective_rate;
+};
+
+Result<AgentResult> run_tax_estimator(Book& book, const dhall::AgentConfig& config,
+                                       AgentStateDB& state);
+
+// ========================================================================
+// subscription-manager
+// ========================================================================
+
+struct Subscription {
+    std::string vendor;             // Normalized vendor name
+    double amount;                  // Typical amount per occurrence
+    std::string frequency;          // "monthly", "weekly", "annual", "irregular"
+    int occurrence_count;
+    std::string first_seen;
+    std::string last_seen;
+};
+
+struct SubscriptionReport {
+    json subscriptions;             // [{vendor, amount, frequency, ...}]
+    double monthly_total;
+    double annual_total;
+    json new_subscriptions;
+    json cancelled;
+    json price_changes;
+};
+
+Result<AgentResult> run_subscription_manager(Book& book, const dhall::AgentConfig& config,
+                                              AgentStateDB& state);
+
+// ========================================================================
+// bill-pay (stub with approval flow)
+// ========================================================================
+
+struct BillPayReport {
+    json bills_due;                 // [{payee, amount, due_date, account}]
+    json pending_approval;          // [{approval_id, payee, amount}]
+    json executed;                  // [{payee, amount, transaction_guid}]
+    double total_due;
+    double total_executed;
+};
+
+Result<AgentResult> run_bill_pay(Book& book, const dhall::AgentConfig& config,
+                                  AgentStateDB& state);
+
+// ========================================================================
+// bank-feed-importer
+// ========================================================================
+
+struct BankFeedImportReport {
+    json import_results;             // [{account, total_parsed, imported, duplicates}]
+    int total_imported;
+    int total_duplicates;
+    int total_errors;
+    int accounts_processed;
+};
+
+Result<AgentResult> run_bank_feed_importer(Book& book, const dhall::AgentConfig& config,
+                                            AgentStateDB& state);
+
+// ========================================================================
+// reconciler
+// ========================================================================
+
+struct ReconcilerReport {
+    json reconciled_accounts;        // [{account, splits_reconciled, balanced, difference}]
+    json transfer_matches;           // [{from, to, amount, similarity}]
+    int accounts_reconciled;
+    int transfers_matched;
+};
+
+Result<AgentResult> run_reconciler(Book& book, const dhall::AgentConfig& config,
+                                    AgentStateDB& state);
+
+// ========================================================================
 // Agent Dispatch
 // ========================================================================
 

@@ -724,4 +724,37 @@ Result<void> Book::void_transaction(const std::string& guid, const std::string& 
     return Result<void>::ok();
 }
 
+Result<void> Book::update_split(const std::string& split_guid,
+                                const std::string& new_account_guid) {
+    if (read_only_) return Result<void>::err("Database is read-only");
+
+    // Verify the target account exists
+    auto acct = get_account(new_account_guid);
+    if (!acct)
+        return Result<void>::err("Account not found: " + new_account_guid);
+
+    sqlite3_stmt* stmt = nullptr;
+    int rc = sqlite3_prepare_v2(db_,
+        "UPDATE splits SET account_guid = ? WHERE guid = ?",
+        -1, &stmt, nullptr);
+    if (rc != SQLITE_OK)
+        return Result<void>::err(std::string("SQL error: ") + sqlite3_errmsg(db_));
+    StmtGuard sg(stmt);
+
+    sqlite3_bind_text(stmt, 1, new_account_guid.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 2, split_guid.c_str(), -1, SQLITE_STATIC);
+
+    if (sqlite3_step(stmt) != SQLITE_DONE)
+        return Result<void>::err(std::string("Update split failed: ") + sqlite3_errmsg(db_));
+
+    if (sqlite3_changes(db_) == 0)
+        return Result<void>::err("Split not found: " + split_guid);
+
+    return Result<void>::ok();
+}
+
+sqlite3* Book::raw_db() const {
+    return db_;
+}
+
 } // namespace gnucash

@@ -363,7 +363,7 @@
           src = ./lib/gnucash-core;
 
           nativeBuildInputs = [ pkgs.cmake pkgs.pkg-config ];
-          buildInputs = [ pkgs.sqlite pkgs.nlohmann_json ];
+          buildInputs = [ pkgs.sqlite pkgs.nlohmann_json pkgs.catch2_3 ];
 
           cmakeFlags = [
             "-DGNUCASH_CORE_BUILD_TESTS=ON"

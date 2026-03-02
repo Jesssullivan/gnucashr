@@ -2,6 +2,7 @@
 // Extracted from packages/gnucashr/src/ofx-parser.cpp (Rcpp removed)
 
 #include "gnucash/ofx.h"
+#include "gnucash/fraction.h"
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
@@ -150,13 +151,13 @@ OfxParseResult parse_ofx(const std::string& content) {
 
         std::string trnamt = extract_tag_value(block, "TRNAMT");
         if (!trnamt.empty()) {
-            std::string clean = trnamt;
-            clean.erase(std::remove(clean.begin(), clean.end(), ','), clean.end());
-            clean.erase(std::remove(clean.begin(), clean.end(), '$'), clean.end());
-            try { txn.amount = std::stod(clean); }
-            catch (...) { txn.amount = 0.0; }
+            // Parse to exact Fraction first (avoids double precision loss)
+            txn.amount_fraction = Fraction::from_string(trnamt);
+            // Backward compat: also set double
+            txn.amount = txn.amount_fraction.to_double();
         } else {
             txn.amount = 0.0;
+            txn.amount_fraction = {0, 100};
         }
 
         result.transactions.push_back(std::move(txn));

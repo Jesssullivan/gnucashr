@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <cmath>
+#include <string>
 #include <vector>
 
 namespace gnucash {
@@ -24,7 +25,17 @@ struct Fraction {
         return {static_cast<int64_t>(std::round(val * denom)), denom};
     }
 
+    // Parse amount string to Fraction, avoiding double precision loss
+    // Handles: "45.23", "-45.23", "$45.23", "$-45.23", "-$45.23", "1,234.56"
+    // Returns Fraction with denom = 10^(decimal places), e.g. -4523/100
+    static Fraction from_string(const std::string& s);
+
     bool is_zero() const { return num == 0; }
+
+    bool operator==(const Fraction& o) const {
+        return num == o.num && denom == o.denom;
+    }
+    bool operator!=(const Fraction& o) const { return !(*this == o); }
 };
 
 // Arithmetic

@@ -597,3 +597,87 @@ TEST_CASE("get_account_balance as_of", "[book][write]") {
     book.close();
     fs::remove(tmp);
 }
+
+// --- update_split ---
+
+TEST_CASE("update_split recategorizes", "[book][write]") {
+    auto tmp = make_writable_copy(ACCOUNTS_DB);
+    auto result = Book::open(tmp, false);
+    REQUIRE(result.is_ok());
+    auto& book = result.unwrap();
+
+    auto commodities = book.get_commodities();
+    std::string usd_guid = commodities[0].guid;
+
+    // Post a transaction: Checking -> Groceries
+    Transaction txn;
+    txn.currency_guid = usd_guid;
+    txn.post_date = "2026-03-01 12:00:00";
+    txn.description = "Recategorize test";
+
+    Split s1;
+    s1.account_guid = "a1000000000000000000000000000008"; // Checking
+    s1.value = {-2000, 100};
+    s1.quantity = {-2000, 100};
+
+    Split s2;
+    s2.account_guid = "a1000000000000000000000000000017"; // Groceries
+    s2.value = {2000, 100};
+    s2.quantity = {2000, 100};
+
+    txn.splits = {s1, s2};
+    auto post_r = book.post_transaction(txn);
+    REQUIRE(post_r.is_ok());
+
+    // Get the groceries split
+    auto tx = book.get_transaction(post_r.unwrap());
+    REQUIRE(tx.has_value());
+    std::string groceries_split_guid;
+    for (const auto& sp : tx->splits) {
+        if (sp.account_guid == "a1000000000000000000000000000017")
+            groceries_split_guid = sp.guid;
+    }
+    REQUIRE_FALSE(groceries_split_guid.empty());
+
+    // Recategorize from Groceries to Dining (a1000000000000000000000000000018)
+    auto upd = book.update_split(groceries_split_guid,
+                                 "a1000000000000000000000000000018");
+    REQUIRE(upd.is_ok());
+
+    // Verify: Groceries balance = 0, Dining balance = $20
+    auto groc_bal = book.get_account_balance("a1000000000000000000000000000017");
+    REQUIRE_THAT(groc_bal, WithinAbs(0.0, 1e-9));
+
+    auto dining_bal = book.get_account_balance("a1000000000000000000000000000018");
+    REQUIRE_THAT(dining_bal, WithinAbs(20.0, 1e-9));
+
+    book.close();
+    fs::remove(tmp);
+}
+
+TEST_CASE("update_split rejects nonexistent split", "[book][write]") {
+    auto tmp = make_writable_copy(ACCOUNTS_DB);
+    auto result = Book::open(tmp, false);
+    REQUIRE(result.is_ok());
+    auto& book = result.unwrap();
+
+    auto upd = book.update_split("nonexistent_split_guid",
+                                 "a1000000000000000000000000000008");
+    REQUIRE(upd.is_err());
+
+    book.close();
+    fs::remove(tmp);
+}
+
+TEST_CASE("update_split rejects nonexistent account", "[book][write]") {
+    auto tmp = make_writable_copy(ACCOUNTS_DB);
+    auto result = Book::open(tmp, false);
+    REQUIRE(result.is_ok());
+    auto& book = result.unwrap();
+
+    auto upd = book.update_split("any_split_guid", "nonexistent_account_guid");
+    REQUIRE(upd.is_err());
+
+    book.close();
+    fs::remove(tmp);
+}
