@@ -8,6 +8,7 @@
 #include <vector>
 #include <optional>
 #include <map>
+#include <cstdint>
 
 struct sqlite3;  // forward declare
 
