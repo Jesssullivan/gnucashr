@@ -97,9 +97,11 @@ if(GNUCASH_CORE_BUILD_TESTS)
         test/test_csv.cpp
         test/test_bank_feed.cpp
         test/test_reconcile.cpp
+        test/test_scheduler.cpp
         src/json_api.cpp
         src/mcp.cpp
         src/dhall_config.cpp
+        src/scheduler.cpp
     )
 
     # Note: agent.cpp, agent_state.cpp, audit.cpp are compiled via gnucash-core library
@@ -133,6 +135,7 @@ if(GNUCASH_CORE_BUILD_BRIDGE)
         src/json_api.cpp
         src/mcp.cpp
         src/dhall_config.cpp
+        src/scheduler.cpp
         src/main.cpp
     )
 

@@ -1,0 +1,14 @@
+{
+    "entries": [
+        {
+            "agent": "dhall/agents/spend-monitor.dhall",
+            "book": "test.gnucash"
+        },
+        {
+            "agent": "dhall/agents/report-generator.dhall",
+            "book": "test.gnucash"
+        }
+    ],
+    "poll_interval_seconds": 30,
+    "log_file": "/tmp/gnucash-daemon.log"
+}

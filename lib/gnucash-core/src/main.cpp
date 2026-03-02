@@ -2,11 +2,24 @@
 #include "gnucash/dhall_config.h"
 #include "gnucash/identity.h"
 #include "gnucash/security.h"
+#include "gnucash/scheduler.h"
 #include <iostream>
 #include <string>
+#include <csignal>
+#include <atomic>
+
+static std::atomic<bool> g_running{true};
+
+static void signal_handler(int) {
+    g_running.store(false);
+}
 
 void print_usage(const char* prog) {
     std::cerr << "Usage: " << prog << " [OPTIONS]\n\n"
+              << "Modes:\n"
+              << "  (default)               MCP server mode (stdin/stdout JSON-RPC)\n"
+              << "  --run <book>            One-shot: run agent on book, print report\n"
+              << "  --daemon <config.json>  Persistent: poll agents on their schedules\n\n"
               << "Options:\n"
               << "  --agent <dhall-file>    Load agent configuration from Dhall file\n"
               << "                          (filters available tools to agent's list)\n"
@@ -16,9 +29,10 @@ void print_usage(const char* prog) {
               << "Environment:\n"
               << "  GNUCASH_USER            User identity (fallback if --identity not set)\n\n"
               << "Examples:\n"
-              << "  " << prog << "  # Run with all tools available\n"
+              << "  " << prog << "  # MCP server mode\n"
               << "  " << prog << " --agent dhall/agents/spend-monitor.dhall\n"
-              << "  " << prog << " --agent dhall/agents/spend-monitor.dhall --enforce\n"
+              << "  " << prog << " --agent dhall/agents/spend-monitor.dhall --run book.gnucash\n"
+              << "  " << prog << " --daemon daemon-config.json\n"
               << "  " << prog << " --identity user@example.com --enforce\n";
 }
 
@@ -27,6 +41,8 @@ int main(int argc, char* argv[]) {
     std::string agent_config_path;
     std::optional<std::string> cli_identity;
     bool enforce = false;
+    std::string run_book;
+    std::string daemon_config_path;
 
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
@@ -39,12 +55,43 @@ int main(int argc, char* argv[]) {
             cli_identity = argv[++i];
         } else if (arg == "--enforce") {
             enforce = true;
+        } else if (arg == "--run" && i + 1 < argc) {
+            run_book = argv[++i];
+        } else if (arg == "--daemon" && i + 1 < argc) {
+            daemon_config_path = argv[++i];
         } else {
             std::cerr << "Unknown argument: " << arg << "\n\n";
             print_usage(argv[0]);
             return 1;
         }
     }
+
+    // ---- One-shot mode: --run <book> --agent <dhall> ----
+    if (!run_book.empty()) {
+        if (agent_config_path.empty()) {
+            std::cerr << "Error: --run requires --agent <dhall-file>\n";
+            return 1;
+        }
+        return gnucash::scheduler::run_oneshot(run_book, agent_config_path, cli_identity);
+    }
+
+    // ---- Daemon mode: --daemon <config.json> ----
+    if (!daemon_config_path.empty()) {
+        auto config_result = gnucash::scheduler::parse_daemon_config(daemon_config_path);
+        if (config_result.is_err()) {
+            std::cerr << "Error: " << config_result.unwrap_err() << "\n";
+            return 1;
+        }
+        auto config = config_result.unwrap();
+
+        // Install signal handlers
+        std::signal(SIGTERM, signal_handler);
+        std::signal(SIGINT, signal_handler);
+
+        return gnucash::scheduler::run_daemon(config, cli_identity, g_running);
+    }
+
+    // ---- MCP server mode (default) ----
 
     // Resolve identity
     auto identity = gnucash::resolve_identity(cli_identity);
@@ -84,9 +131,6 @@ int main(int argc, char* argv[]) {
         } else {
             policy.agent_tier = gnucash::audit::AuthorizationLevel::AUTO;
         }
-
-        // TODO: Load rules from Dhall (dhall-to-json dhall/rules/authorization.dhall)
-        // For now, use hardcoded defaults from the Dhall rules
 
         gnucash::mcp::set_security_policy(std::move(policy));
         std::cerr << "Security enforcement: ENABLED\n";
