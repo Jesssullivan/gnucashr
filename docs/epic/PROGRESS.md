@@ -174,12 +174,60 @@
 
 ---
 
+## Phase 6: R Package Sync (Weeks 12-14) -- COMPLETE
+
+### Week 12: Foundation -- COMPLETE
+- [x] 12.1 Update stale vendored book.h (added update_split, raw_db)
+- [x] 12.2 Update stale gc_book.cpp (implementations for update_split, raw_db)
+- [x] 12.3 Update stale vendored fraction.h (added from_string, operator==, operator!=)
+- [x] 12.4 Update gc_fraction.cpp (Fraction::from_string implementation)
+- [x] 12.5 Vendor CSV module (csv.h, gc_csv.cpp -- 5 format presets, auto-detect)
+- [x] 12.6 Vendor slots module (slots.h, gc_slots.cpp -- CRUD, FITID dedup)
+- [x] 12.7 Rcpp wrappers: book + CSV + slots (12 new exports)
+- [x] 12.8 R wrappers (R/slots.R with roxygen2 docs)
+- [x] 12.9 R tests (test-slots.R: 10 tests, test-csv-cpp.R: 10 tests)
+- [x] 12.10 Regenerate RcppExports
+- [x] 12.11 Verify (41 new tests pass)
+
+### Week 13: Import Engine + Reconciliation -- COMPLETE
+- [x] 13.1 Vendor bank_feed module (bank_feed.h, gc_bank_feed.cpp)
+- [x] 13.2 Vendor reconcile module (reconcile.h, gc_reconcile.cpp)
+- [x] 13.3 Update vendored ofx.h (add amount_fraction field for bank_feed)
+- [x] 13.4 Rcpp wrappers: bank_feed + reconcile (5 new exports)
+- [x] 13.5 R wrappers (R/reconcile.R)
+- [x] 13.6 R tests (test-bank-feed.R: 4 tests, test-reconcile.R: 5 tests)
+- [x] 13.7 Verify (62 new tests pass)
+
+### Week 14: Audit Trail + Agent State + Identity -- COMPLETE
+- [x] 14.1 Vendor nlohmann/json.hpp v3.11.3 (MIT, inst/COPYRIGHTS)
+- [x] 14.2 Vendor identity module (identity.h, gc_identity.cpp with #ifdef _WIN32)
+- [x] 14.3 Vendor audit module (audit.h, gc_audit.cpp with gmtime_r/gmtime_s guard)
+- [x] 14.4 Vendor agent_state module (agent_state.h, gc_agent_state.cpp)
+- [x] 14.5 Rcpp wrappers: identity + audit + agent_state (13 new exports)
+- [x] 14.6 R wrappers (R/identity.R, R/audit.R, R/agent-state.R)
+- [x] 14.7 R tests (test-identity.R: 5, test-audit-r.R: 10, test-agent-state.R: 10)
+- [x] 14.8 Update DESCRIPTION (version 0.3.0.9000, sqlite3 in SystemRequirements)
+- [x] 14.9 Regenerate docs + exports (52 new man pages)
+- [x] 14.10 R CMD check (0 errors, 0 failures, 700 tests)
+- [x] 14.11 C++ tests still pass (262/262)
+
+### Gate G6: [x] PASSED
+- [x] 700 R tests passing (including 85 new Phase 6 tests)
+- [x] 262 C++ tests still passing (standalone lib unchanged)
+- [x] ~35 Rcpp-exported functions in R package
+- [x] 14 vendored headers, 12 vendored sources
+- [x] nlohmann/json.hpp vendored with MIT COPYRIGHTS notice
+- [x] Windows compatibility guards throughout
+- [x] R CMD check: 0 errors, 0 failures
+
+---
+
 ## Metrics Dashboard
 
 | Metric | Target | Current | Status |
 |--------|--------|---------|--------|
-| R CMD check | 0 ERR, 0 WARN | 0 ERR, 3 WARN, 3 NOTE | Passing |
-| Test count (R) | 21 files, 4692 lines | 21/4692 | Baseline |
+| R CMD check | 0 ERR, 0 WARN | 0 ERR, 2 WARN, 3 NOTE | Passing |
+| Test count (R) | 28 files | 700 tests | All passing |
 | Test count (C++) | 250+ tests | 262 | All passing |
 | MCP test scripts | 3+ | 3 | Passing |
 | MCP tools | 29 | 29 | 19 read, 9 write, 1 audit |
@@ -230,6 +278,9 @@
 | 2026-03-02 | OFX backward-compat | New amount_fraction alongside existing double amount field |
 | 2026-03-02 | CSV format auto-detect | Headers matched against PayPal/Stripe/Venmo/Apple Card patterns |
 | 2026-03-02 | Phase 5 complete | 4 new modules, 9 new MCP tools, 2 new agents, 63 new tests, .mcp.json plugin |
+| 2026-03-02 | Phase 6 complete | R package sync: 7 new + 2 updated vendored modules, nlohmann/json, ~35 Rcpp functions, 700 R tests |
+| 2026-03-02 | nlohmann/json vendored | Single-header v3.11.3, MIT license, CRAN precedent (RcppSimdJson, jsonify) |
+| 2026-03-02 | Excluded from R pkg | agent.h (dhall dep), mcp.h (server-only), security.h/approval.h (deferred) |
 
 ---
 
