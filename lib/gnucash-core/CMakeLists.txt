@@ -30,6 +30,8 @@ add_library(gnucash-core
     src/book.cpp
     src/ofx.cpp
     src/audit.cpp
+    src/agent_state.cpp
+    src/agent.cpp
 )
 
 target_include_directories(gnucash-core
@@ -41,7 +43,9 @@ target_include_directories(gnucash-core
 )
 
 target_link_libraries(gnucash-core
-    PRIVATE ${SQLITE3_LIBRARIES}
+    PRIVATE
+        ${SQLITE3_LIBRARIES}
+        nlohmann_json::nlohmann_json
 )
 
 target_link_directories(gnucash-core
@@ -80,11 +84,13 @@ if(GNUCASH_CORE_BUILD_TESTS)
         test/test_ofx.cpp
         test/test_mcp.cpp
         test/test_audit.cpp
+        test/test_agent.cpp
         src/json_api.cpp
         src/mcp.cpp
-        src/audit.cpp
         src/dhall_config.cpp
     )
+
+    # Note: agent.cpp, agent_state.cpp, audit.cpp are compiled via gnucash-core library
 
     # Pass fixture path as compile definition
     target_compile_definitions(gnucash-core-tests PRIVATE
@@ -117,6 +123,8 @@ if(GNUCASH_CORE_BUILD_BRIDGE)
         src/dhall_config.cpp
         src/main.cpp
     )
+
+    # Note: agent.cpp, agent_state.cpp, audit.cpp linked via gnucash-core library
 
     target_include_directories(gnucash-bridge PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src

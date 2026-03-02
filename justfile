@@ -169,12 +169,26 @@ mcp-nix-build:
     nix build .#gnucashMcp
 
 # ============================================================
-# Agents (Week 6+)
+# Agents (Week 6)
 # ============================================================
 
-# Run an agent against a GnuCash book
+# Run an agent against a GnuCash book (CLI one-shot)
 agent-run agent book:
-    @echo "Agent runtime not yet built (Week 6+)"
+    cd lib/gnucash-core/build && ./gnucash-bridge --agent ../../dhall/agents/{{agent}}.dhall --run {{book}}
+
+# Run agent tests (Catch2)
+agent-test: cpp-build
+    cd lib/gnucash-core/build && ctest --output-on-failure -R "agent|vendor|state|spend|report|categorizer|dispatch"
+
+# Show agent state for a book
+agent-status agent book:
+    @echo "Agent state DB: {{book}}.agent.{{agent}}.db"
+    @sqlite3 "{{book}}.agent.{{agent}}.db" "SELECT key, value, updated_at FROM agent_state ORDER BY updated_at DESC LIMIT 10" 2>/dev/null || echo "  (no state yet)"
+
+# Show review queue for a book
+agent-review book agent="transaction-categorizer":
+    @echo "Review queue: {{book}}.agent.{{agent}}.db"
+    @sqlite3 "{{book}}.agent.{{agent}}.db" "SELECT id, transaction_guid, suggested_category, confidence, status FROM review_queue WHERE status='pending' LIMIT 20" 2>/dev/null || echo "  (no pending reviews)"
 
 # ============================================================
 # Development Utilities
