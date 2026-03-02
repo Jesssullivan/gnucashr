@@ -1,24 +1,25 @@
 #include <catch2/catch_test_macros.hpp>
 #include "../src/json_api.h"
+#include "gnucash/guid.h"
 #include <nlohmann/json.hpp>
 #include <string>
 #include <fstream>
 #include <cstdlib>
+#include <filesystem>
 
 using json = nlohmann::json;
+namespace fs = std::filesystem;
 
 static std::string fixture(const std::string& name) {
     return std::string(FIXTURE_DIR) + "/" + name;
 }
 
-// Helper to make a writable copy of a fixture
+// Helper to make a writable copy of a fixture in temp dir (Nix-safe)
 static std::string make_writable_copy(const std::string& fixture_name) {
     std::string src = fixture(fixture_name);
-    std::string dst = std::string(FIXTURE_DIR) + "/tmp_" + fixture_name;
-    std::ifstream in(src, std::ios::binary);
-    std::ofstream out(dst, std::ios::binary);
-    out << in.rdbuf();
-    return dst;
+    auto dst = fs::temp_directory_path() / ("jsonapi_test_" + gnucash::generate_guid() + "_" + fixture_name);
+    fs::copy_file(src, dst, fs::copy_options::overwrite_existing);
+    return dst.string();
 }
 
 static void remove_file(const std::string& path) {

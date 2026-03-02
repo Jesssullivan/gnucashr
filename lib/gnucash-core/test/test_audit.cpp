@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include "gnucash/audit.h"
+#include "gnucash/guid.h"
 #include <nlohmann/json.hpp>
 #include <string>
 #include <cstdio>
@@ -7,11 +8,12 @@
 
 using json = nlohmann::json;
 using namespace gnucash::audit;
+namespace fs = std::filesystem;
 
-// Helper: create a temporary book path for audit DB
+// Helper: create a temporary book path for audit DB (Nix-safe: uses temp dir)
 static std::string temp_book_path() {
-    static int counter = 0;
-    return std::string(FIXTURE_DIR) + "/tmp_audit_test_" + std::to_string(counter++) + ".gnucash";
+    auto tmp = fs::temp_directory_path() / ("audit_test_" + gnucash::generate_guid() + ".gnucash");
+    return tmp.string();
 }
 
 // Helper: clean up audit DB file
