@@ -45,7 +45,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Remove renv .Rprofile
-        run: rm -f .Rprofile
+        run: rm -f packages/gnucashr/.Rprofile
 
       - name: Install Nix
         uses: cachix/install-nix-action@v27
@@ -74,7 +74,7 @@ jobs:
       - name: Build tarball
         run: |
           nix build .#tarball --out-link result-tarball
-          VERSION=$(grep "^Version:" DESCRIPTION | cut -d' ' -f2)
+          VERSION=$(grep "^Version:" packages/gnucashr/DESCRIPTION | cut -d' ' -f2)
           cp result-tarball gnucashr_${VERSION}.tar.gz
           ls -la gnucashr_*.tar.gz
 
@@ -106,7 +106,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Remove renv .Rprofile
-        run: rm -f .Rprofile
+        run: rm -f packages/gnucashr/.Rprofile
 
       - name: Install Nix
         uses: cachix/install-nix-action@v27
@@ -184,7 +184,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Remove renv .Rprofile
-        run: rm -f .Rprofile
+        run: rm -f packages/gnucashr/.Rprofile
 
       - name: Install Nix
         uses: cachix/install-nix-action@v27
@@ -201,7 +201,8 @@ jobs:
 
       - name: Run coverage
         run: |
-          nix develop --command bash -c '
+          cd packages/gnucashr
+          nix develop ../../ --command bash -c '
             Rscript -e "
               cov <- covr::package_coverage(type = \"tests\", line_exclusions = list(\"src/RcppExports.cpp\"))
               total_coverage <- covr::percent_coverage(cov)
@@ -214,5 +215,5 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: coverage.xml
+          files: packages/gnucashr/coverage.xml
           fail_ci_if_error: false

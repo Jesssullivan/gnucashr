@@ -141,14 +141,15 @@
         # Compiles individual .o files that can be reused
         packages.cppBuild = pkgs.stdenv.mkDerivation {
           name = "gnucashr-cpp-${version}";
-          src = ./src;
+          src = ./packages/gnucashr/src;
 
-          buildInputs = [ rWithPackages pkgs.tbb ];
-          nativeBuildInputs = [ pkgs.gcc ];
+          buildInputs = [ rWithPackages pkgs.tbb pkgs.sqlite ];
+          nativeBuildInputs = [ pkgs.gcc pkgs.pkg-config ];
 
           # TBB include/lib paths
           TBB_INCLUDE = "${pkgs.tbb.dev}/include";
           TBB_LIB = "${pkgs.tbb}/lib";
+          SQLITE3_INCLUDE = "${pkgs.sqlite.dev}/include";
 
           buildPhase = ''
             echo "Compiling C++ source files..."
@@ -176,6 +177,8 @@
                   -I"$RCPP_ARMA_INCLUDE" \
                   -I"$RCPP_PARALLEL_INCLUDE" \
                   -I"$TBB_INCLUDE" \
+                  -I"$SQLITE3_INCLUDE" \
+                  -I. \
                   -std=c++17 -fopenmp -fPIC -DNDEBUG -O2
               fi
             done
@@ -207,7 +210,7 @@
         # Rebuilds quickly using pre-compiled C++ objects
         packages.tarball = pkgs.runCommand "gnucashr-${version}.tar.gz" {
           buildInputs = [ rWithPackages ] ++ systemDeps;
-          src = self;
+          src = ./packages/gnucashr;
           rDeps = self.packages.${system}.rDeps;
           cppObjects = self.packages.${system}.cppBuild;
           # Disable renv auto-activation (we use Nix for dependencies)
@@ -242,7 +245,7 @@
         # Depends on tarball, runs covr::package_coverage
         packages.coverage = pkgs.runCommand "gnucashr-coverage-${version}" {
           buildInputs = [ rWithPackages ] ++ systemDeps;
-          src = self;
+          src = ./packages/gnucashr;
           tarball = self.packages.${system}.tarball;
           RENV_ACTIVATE_PROJECT = "FALSE";
         } ''
@@ -268,7 +271,7 @@
         # Builds static documentation site
         packages.pkgdown = pkgs.runCommand "gnucashr-pkgdown-${version}" {
           buildInputs = [ rWithPackages ] ++ systemDeps;
-          src = self;
+          src = ./packages/gnucashr;
           tarball = self.packages.${system}.tarball;
           RENV_ACTIVATE_PROJECT = "FALSE";
         } ''
@@ -284,23 +287,130 @@
           cp -r public/* $out/
         '';
 
+        # Stage 6: gnucash-core C++ library (standalone, no R dependency)
+        packages.gnucashCore = pkgs.stdenv.mkDerivation {
+          pname = "gnucash-core";
+          inherit version;
+          src = ./lib/gnucash-core;
+
+          nativeBuildInputs = [ pkgs.cmake pkgs.pkg-config ];
+          buildInputs = [ pkgs.sqlite pkgs.nlohmann_json ];
+
+          cmakeFlags = [
+            "-DGNUCASH_CORE_BUILD_TESTS=OFF"
+          ];
+
+          meta = {
+            description = "Standalone C++ library for GnuCash SQLite database operations";
+          };
+        };
+
+        # Stage 6b: gnucash-bridge JSON API executable
+        packages.gnucashBridge = pkgs.stdenv.mkDerivation {
+          pname = "gnucash-bridge";
+          inherit version;
+          src = ./lib/gnucash-core;
+
+          nativeBuildInputs = [ pkgs.cmake pkgs.pkg-config ];
+          buildInputs = [ pkgs.sqlite pkgs.nlohmann_json ];
+
+          cmakeFlags = [
+            "-DGNUCASH_CORE_BUILD_TESTS=OFF"
+            "-DGNUCASH_CORE_BUILD_BRIDGE=ON"
+          ];
+
+          installPhase = ''
+            mkdir -p $out/bin
+            cp gnucash-bridge $out/bin/
+          '';
+
+          meta = {
+            description = "JSON API bridge for GnuCash SQLite database operations";
+          };
+        };
+
+        # Stage 7: gnucash-mcp (MCP server with agent configs)
+        packages.gnucashMcp = pkgs.stdenv.mkDerivation {
+          pname = "gnucash-mcp";
+          inherit version;
+          src = ./lib/gnucash-core;
+
+          nativeBuildInputs = [ pkgs.cmake pkgs.pkg-config ];
+          buildInputs = [ pkgs.sqlite pkgs.nlohmann_json ];
+
+          cmakeFlags = [
+            "-DGNUCASH_CORE_BUILD_TESTS=OFF"
+            "-DGNUCASH_CORE_BUILD_BRIDGE=ON"
+            "-DCMAKE_BUILD_TYPE=Release"
+          ];
+
+          # Bundle Dhall agent configs alongside the binary
+          agentConfigs = ./dhall;
+
+          installPhase = ''
+            mkdir -p $out/bin $out/share/gnucash-mcp/dhall
+            cp gnucash-bridge $out/bin/gnucash-mcp
+            cp -r $agentConfigs/* $out/share/gnucash-mcp/dhall/
+          '';
+
+          meta = {
+            description = "MCP (Model Context Protocol) server for GnuCash with audit trail and agent configs";
+            mainProgram = "gnucash-mcp";
+          };
+        };
+
+        # Stage 8: gnucash-core test runner
+        packages.gnucashCoreTests = pkgs.stdenv.mkDerivation {
+          pname = "gnucash-core-tests";
+          inherit version;
+          src = ./lib/gnucash-core;
+
+          nativeBuildInputs = [ pkgs.cmake pkgs.pkg-config ];
+          buildInputs = [ pkgs.sqlite pkgs.nlohmann_json pkgs.catch2_3 ];
+
+          cmakeFlags = [
+            "-DGNUCASH_CORE_BUILD_TESTS=ON"
+          ];
+
+          # Copy fixture databases for testing
+          postPatch = ''
+            cp ${./packages/gnucashr/tests/testthat/fixtures/databases/minimal.gnucash} test/fixtures/minimal.gnucash
+            cp ${./packages/gnucashr/tests/testthat/fixtures/databases/with-accounts.gnucash} test/fixtures/with-accounts.gnucash
+          '';
+
+          installPhase = ''
+            mkdir -p $out/bin
+            cp gnucash-core-tests $out/bin/
+          '';
+
+          doCheck = true;
+          checkPhase = ''
+            ctest --output-on-failure
+          '';
+
+          meta = {
+            description = "Tests for gnucash-core C++ library";
+          };
+        };
+
         devShells.default = pkgs.mkShell {
-          buildInputs = [ rWithPackages ] ++ systemDeps;
+          buildInputs = [ rWithPackages ] ++ systemDeps ++ [
+            # Monorepo tooling
+            pkgs.just
+            pkgs.dhall
+            pkgs.dhall-json
+
+            # C++ library build tools
+            pkgs.cmake
+            pkgs.catch2_3
+            pkgs.nlohmann_json
+          ];
 
           shellHook = ''
-            echo "gnucashr development environment"
+            echo "gnucashr monorepo development environment"
             echo "R version: $(R --version | head -1)"
             echo ""
-            echo "Available commands:"
-            echo "  R                        - Start R console"
-            echo "  Rscript -e 'devtools::test()'     - Run tests"
-            echo "  Rscript -e 'devtools::check()'    - Run R CMD check"
-            echo "  Rscript -e 'devtools::document()' - Generate documentation"
-            echo ""
-            echo "Cacheable derivations:"
-            echo "  nix build .#rDeps      - Build R dependencies (cached)"
-            echo "  nix build .#cppBuild   - Build C++ objects (cached)"
-            echo "  nix build .#tarball    - Build full package"
+            echo "Quick start: just --list"
             echo ""
           '';
 
@@ -316,7 +426,7 @@
         # R CMD check (full validation) - uses cached components
         checks.r-cmd-check = pkgs.runCommand "gnucashr-r-cmd-check" {
           buildInputs = [ rWithPackages ] ++ systemDeps;
-          src = self;
+          src = ./packages/gnucashr;
           rDeps = self.packages.${system}.rDeps;
           cppObjects = self.packages.${system}.cppBuild;
           NIX_CFLAGS_COMPILE = "-I${pkgs.tbb.dev}/include";

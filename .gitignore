@@ -9,11 +9,12 @@ CLAUDE.md
 *.o
 *.so
 *.dll
-src/symbols.rds
+packages/gnucashr/src/symbols.rds
 
 # Package build
 *.tar.gz
 *.Rcheck/
+..Rcheck/
 
 # IDE
 .Rproj.user
@@ -26,7 +27,7 @@ src/symbols.rds
 Thumbs.db
 
 # pkgdown generated docs
-docs/
+packages/gnucashr/docs/
 pkgdown/
 
 # CI artifacts
@@ -59,3 +60,6 @@ result-*
 bazel-*
 .bazelrc.user
 .cache/bazel/
+
+# Dhall
+.dhall-cache/

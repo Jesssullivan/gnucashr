@@ -19,6 +19,10 @@ jobs:
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
 
+    defaults:
+      run:
+        working-directory: packages/gnucashr
+
     steps:
       - uses: actions/checkout@v4
 
@@ -33,6 +37,7 @@ jobs:
         with:
           extra-packages: any::devtools
           needs: build
+          working-directory: packages/gnucashr
 
       - name: Build package
         run: |
@@ -40,6 +45,10 @@ jobs:
           file.copy(pkg, ".")
           cat("PKG_FILE=", basename(pkg), "\n", file = Sys.getenv("GITHUB_ENV"), sep = "", append = TRUE)
         shell: Rscript {0}
+
+      - name: Copy tarball to repo root
+        run: cp gnucashr_*.tar.gz ../../
+        working-directory: packages/gnucashr
 
       - name: Create Release
         uses: softprops/action-gh-release@v1

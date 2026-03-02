@@ -1,34 +1,9 @@
-# gnucashr Root BUILD.bazel
-# Minimal configuration - full R package build done via Nix
+# gnucashr Monorepo Root BUILD.bazel
 #
-# NOTE: rules_r removed as it doesn't support bzlmod well.
-# Bazel is used for C++ compilation caching validation only.
-# See src/BUILD.bazel for C++ targets.
+# Workspace root for the gnucashr monorepo.
+# R package lives in packages/gnucashr/
+# C++ library will live in lib/gnucash-core/
+# Agents will live in agents/
 
-# Export package files for reference
-exports_files([
-    "DESCRIPTION",
-    "NAMESPACE",
-    "LICENSE",
-])
-
-# Filegroup for R sources
-filegroup(
-    name = "r_sources",
-    srcs = glob(["R/**/*.R"]),
-    visibility = ["//visibility:public"],
-)
-
-# Filegroup for tests
-filegroup(
-    name = "test_sources",
-    srcs = glob(["tests/testthat/**/*.R"]),
-    visibility = ["//visibility:public"],
-)
-
-# Filegroup for documentation
-filegroup(
-    name = "docs",
-    srcs = glob(["man/**/*.Rd"]),
-    visibility = ["//visibility:public"],
-)
+# Re-export package-level targets
+# (individual BUILD.bazel files in subdirectories define their own targets)

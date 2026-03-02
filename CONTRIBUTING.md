@@ -6,9 +6,27 @@ Thank you for your interest in contributing to gnucashr! This document provides 
 
 Please be respectful and constructive in all interactions. We welcome contributors of all experience levels.
 
+## Repository Structure
+
+This is a monorepo with the R package in `packages/gnucashr/`:
+
+```
+gnucashr/
+├── packages/gnucashr/    # R package (CRAN-submittable)
+│   ├── R/                # R source files
+│   ├── src/              # C++ source (Rcpp)
+│   ├── tests/testthat/   # Test files
+│   └── DESCRIPTION       # Package metadata
+├── dhall/                # Typed configuration (agent rules, templates)
+├── docs/epic/            # Development roadmap
+├── flake.nix             # Nix flake (reproducible builds)
+├── justfile              # Central command runner
+└── BUILD.bazel           # Bazel build configuration
+```
+
 ## Getting Started
 
-### Development Environment Setup
+### Development Environment Setup (Nix -- recommended)
 
 1. **Clone the repository:**
 
@@ -20,23 +38,45 @@ Please be respectful and constructive in all interactions. We welcome contributo
    git clone https://github.com/Jesssullivan/gnucashr.git
    ```
 
-2. **Install system dependencies:**
+2. **Enter the Nix development shell:**
 
-   The package requires a C++17 compiler and GNU make for the Rcpp components.
+   ```bash
+   nix develop
+   # Or with direnv: direnv allow
+   ```
 
+   This provides R, all package dependencies, C++ toolchain, Just, Dhall,
+   and development tools in a single reproducible environment.
+
+3. **Verify setup:**
+
+   ```bash
+   just --list     # Show available commands
+   just test       # Run tests
+   just dhall-check  # Validate Dhall configuration
+   ```
+
+### Alternative Setup (without Nix)
+
+1. **Install system dependencies:**
+
+   - C++17 compiler and GNU make
    - **macOS:** `xcode-select --install`
    - **Ubuntu/Debian:** `sudo apt-get install build-essential`
    - **Fedora/RHEL:** `sudo dnf install gcc-c++ make`
    - **Windows:** Install [Rtools](https://cran.r-project.org/bin/windows/Rtools/)
 
-3. **Set up renv (recommended):**
+2. **Set up renv:**
 
+   ```bash
+   cd packages/gnucashr
+   ```
    ```r
    install.packages("renv")
    renv::restore()
    ```
 
-4. **Or install dependencies manually:**
+3. **Or install dependencies manually:**
 
    ```r
    install.packages(c(
@@ -47,31 +87,33 @@ Please be respectful and constructive in all interactions. We welcome contributo
    ))
    ```
 
-5. **Load the package for development:**
-
-   ```r
-   devtools::load_all()
-   ```
-
 ### Development Workflow
 
-We use the standard devtools workflow:
+Use `just` from the repo root, or standard devtools from `packages/gnucashr/`:
+
+```bash
+# Via Justfile (preferred)
+just test          # Run tests
+just check         # R CMD check
+just document      # Generate docs
+just build         # Build tarball
+just lint          # Lint R code
+just dhall-check   # Validate Dhall config
+
+# Via Nix
+just nix-build     # Build tarball via Nix
+just nix-check     # R CMD check via Nix
+just shell         # Enter Nix dev shell
+```
+
+Or directly with R:
 
 ```r
-# Load package during development
+# From packages/gnucashr/
 devtools::load_all()
-
-# Run tests
 devtools::test()
-
-# Check package
 devtools::check()
-
-# Build documentation
 devtools::document()
-
-# Build and install
-devtools::install()
 ```
 
 ## Code Style
@@ -128,15 +170,18 @@ NumericVector my_function(NumericVector x) {
 
 ### Running Tests
 
-```r
-# Run all tests
-devtools::test()
+```bash
+# Via Justfile (from repo root)
+just test
+
+# Or from packages/gnucashr/:
+Rscript -e 'devtools::test()'
 
 # Run specific test file
-testthat::test_file("tests/testthat/test-connection.R")
+Rscript -e 'testthat::test_file("tests/testthat/test-connection.R")'
 
 # Run tests with coverage
-covr::package_coverage()
+just coverage
 ```
 
 ### Writing Tests
@@ -192,12 +237,12 @@ Write clear, concise commit messages:
 1. **Create a branch** from `main`
 2. **Make your changes** following the guidelines above
 3. **Run checks:**
-   ```r
-   devtools::check()
-   devtools::test()
+   ```bash
+   just check
+   just dhall-check
    ```
 4. **Update documentation** if you changed exported functions
-5. **Update NEWS.md** for user-facing changes
+5. **Update `packages/gnucashr/NEWS.md`** for user-facing changes
 6. **Submit a pull request** to the GitLab repository (preferred) or GitHub mirror
 7. **Respond to review feedback** promptly
 

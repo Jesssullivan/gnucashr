@@ -1,0 +1,23 @@
+# Makevars for gnucashr package
+# Requires: RcppParallel (TBB), RcppArmadillo (OpenMP), sqlite3
+
+CXX_STD = CXX17
+
+# RcppParallel flags (Intel TBB)
+# Try RcppParallelLibs() first; fall back to system TBB
+RCPP_PARALLEL_LIBS = $(shell "${R_HOME}/bin/Rscript" -e "cat(RcppParallel::RcppParallelLibs())" 2>/dev/null)
+
+# If RcppParallel doesn't provide libs, use system TBB
+ifeq ($(RCPP_PARALLEL_LIBS),)
+  RCPP_PARALLEL_LIBS = -ltbb -ltbbmalloc
+endif
+
+# sqlite3 via pkg-config (for gnucash-core book.cpp)
+SQLITE3_CFLAGS = $(shell pkg-config --cflags sqlite3 2>/dev/null)
+SQLITE3_LIBS = $(shell pkg-config --libs sqlite3 2>/dev/null)
+
+# gnucash-core headers are vendored in src/gnucash/
+PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS) -DRCPP_PARALLEL_USE_TBB=1 \
+               -I. $(SQLITE3_CFLAGS)
+
+PKG_LIBS = $(SHLIB_OPENMP_CXXFLAGS) $(RCPP_PARALLEL_LIBS) $(SQLITE3_LIBS)
