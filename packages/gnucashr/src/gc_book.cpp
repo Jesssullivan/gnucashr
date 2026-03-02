@@ -52,7 +52,11 @@ namespace {
     std::string now_timestamp() {
         std::time_t t = std::time(nullptr);
         std::tm tm{};
+#ifdef _WIN32
+        gmtime_s(&tm, &t);
+#else
         gmtime_r(&t, &tm);
+#endif
         std::ostringstream ss;
         ss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
         return ss.str();
