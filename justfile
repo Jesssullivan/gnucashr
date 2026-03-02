@@ -122,12 +122,59 @@ dhall-lint:
     find dhall -name "*.dhall" -exec dhall lint --inplace {} \;
 
 # ============================================================
-# Agents (Week 5+)
+# MCP Server (Week 5)
+# ============================================================
+
+# Build MCP server
+mcp-build:
+    cd lib/gnucash-core && mkdir -p build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Release && cmake --build . -j$(nproc)
+
+# Run MCP server (stdin/stdout)
+mcp-run book *args='':
+    cd lib/gnucash-core/build && echo '{"jsonrpc":"2.0","method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}},"id":1}' | ./gnucash-bridge {{args}}
+
+# Run MCP server with agent config
+mcp-agent agent book:
+    cd lib/gnucash-core/build && ./gnucash-bridge --agent ../../dhall/agents/{{agent}}.dhall
+
+# Test MCP protocol
+mcp-test:
+    cd lib/gnucash-core/build && bash ../test/test-mcp-session.sh
+
+# Test audit trail
+mcp-test-audit:
+    cd lib/gnucash-core/build && bash ../test/test-audit-trail.sh
+
+# Test agent filtering
+mcp-test-agent:
+    cd lib/gnucash-core/build && bash ../test/test-agent-filtering.sh
+
+# Run all MCP tests
+mcp-test-all: mcp-test mcp-test-audit mcp-test-agent
+    @echo "All MCP tests passed ✓"
+
+# Query audit log for a book
+mcp-audit book *filters='':
+    @echo '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"gnucash_audit_log","arguments":{}},"id":1}' | sqlite3 {{book}}.audit.db "SELECT * FROM audit_log ORDER BY timestamp DESC LIMIT 10"
+
+# Type-check agent configs
+mcp-check-agents:
+    @for agent in spend-monitor report-generator transaction-categorizer; do \
+        echo "Checking dhall/agents/$$agent.dhall..."; \
+        dhall type --file dhall/agents/$$agent.dhall > /dev/null && echo "  ✓ Valid" || echo "  ✗ Error"; \
+    done
+
+# Build MCP server via Nix (hermetic)
+mcp-nix-build:
+    nix build .#gnucashMcp
+
+# ============================================================
+# Agents (Week 6+)
 # ============================================================
 
 # Run an agent against a GnuCash book
 agent-run agent book:
-    @echo "Agent framework not yet built (Week 5)"
+    @echo "Agent runtime not yet built (Week 6+)"
 
 # ============================================================
 # Development Utilities

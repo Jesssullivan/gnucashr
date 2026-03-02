@@ -59,18 +59,19 @@
 
 ---
 
-## Phase 3: Agent Framework (Weeks 5-6) -- NOT STARTED
+## Phase 3: Agent Framework (Weeks 5-6) -- IN PROGRESS
 
-### Week 5: Agent Framework + MCP Server
+### Week 5: Agent Framework + MCP Server -- COMPLETE
 **Detailed Plan**: See `docs/epic/05-WEEK5-PLAN.md` (7-day implementation guide)
 
-- [ ] 5.1 JSON-RPC 2.0 protocol layer (extend gnucash-bridge with MCP support)
-- [ ] 5.2 MCP tool schema (19 tools mapped from gnucash-bridge methods)
-- [ ] 5.3 Audit trail system (Aperture-compatible SQLite schema)
-- [ ] 5.4 Dhall agent configurations (3 example agents: spend-monitor, report-generator, transaction-categorizer)
-- [ ] 5.5 Tool filtering via Dhall
-- [ ] 5.6 Integration testing with Claude Code
-- [ ] 5.7 Documentation (MCP_ARCHITECTURE.md, AGENT_DEVELOPMENT_GUIDE.md)
+- [x] 5.1 JSON-RPC 2.0 protocol layer (mcp.cpp: ~800 lines, 20 MCP tools, protocol auto-detection)
+- [x] 5.2 MCP tool schema (20 tools: 15 read, 4 write, 1 audit)
+- [x] 5.3 Audit trail system (audit.cpp: ~650 lines, Aperture-compatible SQLite, before/after state capture)
+- [x] 5.4 Dhall agent configurations (3 example agents: spend-monitor [6 tools], report-generator [8 tools], transaction-categorizer [6 tools])
+- [x] 5.5 Tool filtering via Dhall (dhall_config.cpp: --agent CLI arg, filtering in get_tool_definitions)
+- [x] 5.6 Integration testing with Claude Code (3 test scripts: protocol, audit, agent filtering)
+- [x] 5.7 Documentation (MCP_ARCHITECTURE.md [410 lines], AGENT_DEVELOPMENT_GUIDE.md [complete])
+- [x] 5.8 Nix integration (gnucashMcp derivation: Release build + bundled Dhall configs, `nix build .#gnucashMcp` verified)
 
 ### Week 6: First Three Agents
 - [ ] 6.1 spend-monitor agent
@@ -122,11 +123,13 @@
 | R CMD check | 0 ERR, 0 WARN | 0 ERR, 3 WARN, 3 NOTE | Passing |
 | Test count (R) | 21 files, 4692 lines | 21/4692 | Baseline |
 | Test count (C++) | 50+ tests | 91 | All passing |
-| Agent count | 7 | 0 | Not started |
-| Dhall configs | All compile | 13 files | All pass |
+| MCP test scripts | 3+ | 3 | Passing |
+| MCP tools | 20 | 20 | 15 read, 4 write, 1 audit |
+| Agent configs | 7 | 3 | spend-monitor, report-generator, transaction-categorizer |
+| Dhall configs | All compile | 17 files | All pass (agents + types) |
 | Code coverage | >80% | ~80% (R only) | Baseline |
 | GnuCash schema tables mapped | 10+ | 6 (via R) | Partial |
-| Justfile recipes | 20+ | 26 | Root + package |
+| Justfile recipes | 20+ | 36 | Root (24) + package (12) |
 | CI pipelines green | Both platforms | Yes (current layout) | Baseline |
 
 ---
@@ -147,6 +150,11 @@
 | 2026-02-25 | GnuCashOperation Dhall type | 14 operations, 6 sub-types, maps to JSON API methods |
 | 2026-02-25 | Phase 2 complete | 91 C++ tests, 586 R tests, all gates passed |
 | 2026-02-25 | Week 5 plan created | MCP server C++ implementation, Aperture-ready audit, 7-day timeline |
+| 2026-02-25 | MCP protocol layer complete | JSON-RPC 2.0 over stdin/stdout, 20 tools, protocol auto-detection |
+| 2026-02-25 | Audit trail complete | Aperture-compatible SQLite schema, before/after state, duration timing |
+| 2026-02-25 | Agent configs complete | 3 Dhall agents with tool filtering, spend-monitor (6 tools), report-generator (8 tools), transaction-categorizer (6 tools + Review tier) |
+| 2026-02-25 | Week 5 Phase 5.1-5.4 complete | MCP server ready, all tests passing, comprehensive documentation |
+| 2026-02-25 | Week 5 complete | gnucashMcp Nix derivation (Release + Dhall configs), dhall_config.cpp warning fixed, all 91 C++ tests passing |
 
 ---
 

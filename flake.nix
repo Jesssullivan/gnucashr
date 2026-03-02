@@ -326,6 +326,36 @@
           };
         };
 
+        # Stage 7: gnucash-mcp (MCP server with agent configs)
+        packages.gnucashMcp = pkgs.stdenv.mkDerivation {
+          pname = "gnucash-mcp";
+          inherit version;
+          src = ./lib/gnucash-core;
+
+          nativeBuildInputs = [ pkgs.cmake pkgs.pkg-config ];
+          buildInputs = [ pkgs.sqlite pkgs.nlohmann_json ];
+
+          cmakeFlags = [
+            "-DGNUCASH_CORE_BUILD_TESTS=OFF"
+            "-DGNUCASH_CORE_BUILD_BRIDGE=ON"
+            "-DCMAKE_BUILD_TYPE=Release"
+          ];
+
+          # Bundle Dhall agent configs alongside the binary
+          agentConfigs = ./dhall;
+
+          installPhase = ''
+            mkdir -p $out/bin $out/share/gnucash-mcp/dhall
+            cp gnucash-bridge $out/bin/gnucash-mcp
+            cp -r $agentConfigs/* $out/share/gnucash-mcp/dhall/
+          '';
+
+          meta = {
+            description = "MCP (Model Context Protocol) server for GnuCash with audit trail and agent configs";
+            mainProgram = "gnucash-mcp";
+          };
+        };
+
         # Stage 8: gnucash-core test runner
         packages.gnucashCoreTests = pkgs.stdenv.mkDerivation {
           pname = "gnucash-core-tests";
