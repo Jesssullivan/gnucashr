@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tinyclaw
+  labels:
+    app: tinyclaw
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: tinyclaw
+  template:
+    metadata:
+      labels:
+        app: tinyclaw
+    spec:
+      containers:
+        - name: tinyclaw
+          image: tinyclaw:latest
+          env:
+            - name: TINYCLAW_CHANNELS_XMPP_ENABLED
+              value: "true"
+            - name: TINYCLAW_CHANNELS_XMPP_JID
+              valueFrom:
+                secretKeyRef:
+                  name: tinyclaw-secrets
+                  key: xmpp-jid
+            - name: TINYCLAW_CHANNELS_XMPP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: tinyclaw-secrets
+                  key: xmpp-password
+            - name: TINYCLAW_CHANNELS_XMPP_SERVER
+              valueFrom:
+                secretKeyRef:
+                  name: tinyclaw-secrets
+                  key: xmpp-server
+                  optional: true
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: tinyclaw-secrets
+                  key: anthropic-api-key
+          volumeMounts:
+            - name: gnucashr-data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+        # gnucash-bridge sidecar (MCP server)
+        - name: gnucash-bridge
+          image: gnucashr-daemon:latest
+          args:
+            - "--mcp"
+            - "--enforce"
+          stdin: true
+          volumeMounts:
+            - name: gnucashr-data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: gnucashr-data
+          persistentVolumeClaim:
+            claimName: gnucashr-data
+      restartPolicy: Always

@@ -1,0 +1,22 @@
+{
+    "entries": [
+        {
+            "agent": "dhall/agents/spend-monitor.dhall",
+            "book": "/data/finances.gnucash"
+        },
+        {
+            "agent": "dhall/agents/bank-feed-importer.dhall",
+            "book": "/data/finances.gnucash"
+        },
+        {
+            "agent": "dhall/agents/transaction-categorizer.dhall",
+            "book": "/data/finances.gnucash"
+        },
+        {
+            "agent": "dhall/agents/reconciler.dhall",
+            "book": "/data/finances.gnucash"
+        }
+    ],
+    "poll_interval_seconds": 3600,
+    "log_file": "/var/log/gnucashr-daemon.log"
+}
