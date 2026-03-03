@@ -38,6 +38,7 @@ Suggests:
     withr,
     keyring,
     hedgehog,
+    httr2,
     data.table,
     ggplot2,
     scales,

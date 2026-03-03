@@ -614,6 +614,152 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// gc_classify_tool
+std::string gc_classify_tool(std::string tool_name);
+RcppExport SEXP _gnucashr_gc_classify_tool(SEXP tool_nameSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type tool_name(tool_nameSEXP);
+    rcpp_result_gen = Rcpp::wrap(gc_classify_tool(tool_name));
+    return rcpp_result_gen;
+END_RCPP
+}
+// gc_security_check
+Rcpp::List gc_security_check(Rcpp::List policy_list, std::string tool_name, std::string arguments_json);
+RcppExport SEXP _gnucashr_gc_security_check(SEXP policy_listSEXP, SEXP tool_nameSEXP, SEXP arguments_jsonSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::List >::type policy_list(policy_listSEXP);
+    Rcpp::traits::input_parameter< std::string >::type tool_name(tool_nameSEXP);
+    Rcpp::traits::input_parameter< std::string >::type arguments_json(arguments_jsonSEXP);
+    rcpp_result_gen = Rcpp::wrap(gc_security_check(policy_list, tool_name, arguments_json));
+    return rcpp_result_gen;
+END_RCPP
+}
+// gc_rate_limiter_create
+SEXP gc_rate_limiter_create();
+RcppExport SEXP _gnucashr_gc_rate_limiter_create() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(gc_rate_limiter_create());
+    return rcpp_result_gen;
+END_RCPP
+}
+// gc_rate_limiter_check
+Rcpp::List gc_rate_limiter_check(SEXP limiter_ptr, std::string agent, std::string operation, int max_per_hour);
+RcppExport SEXP _gnucashr_gc_rate_limiter_check(SEXP limiter_ptrSEXP, SEXP agentSEXP, SEXP operationSEXP, SEXP max_per_hourSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type limiter_ptr(limiter_ptrSEXP);
+    Rcpp::traits::input_parameter< std::string >::type agent(agentSEXP);
+    Rcpp::traits::input_parameter< std::string >::type operation(operationSEXP);
+    Rcpp::traits::input_parameter< int >::type max_per_hour(max_per_hourSEXP);
+    rcpp_result_gen = Rcpp::wrap(gc_rate_limiter_check(limiter_ptr, agent, operation, max_per_hour));
+    return rcpp_result_gen;
+END_RCPP
+}
+// gc_check_anomaly
+Rcpp::List gc_check_anomaly(std::string arguments_json, double amount_threshold);
+RcppExport SEXP _gnucashr_gc_check_anomaly(SEXP arguments_jsonSEXP, SEXP amount_thresholdSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type arguments_json(arguments_jsonSEXP);
+    Rcpp::traits::input_parameter< double >::type amount_threshold(amount_thresholdSEXP);
+    rcpp_result_gen = Rcpp::wrap(gc_check_anomaly(arguments_json, amount_threshold));
+    return rcpp_result_gen;
+END_RCPP
+}
+// gc_approval_open
+SEXP gc_approval_open(std::string book_path);
+RcppExport SEXP _gnucashr_gc_approval_open(SEXP book_pathSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type book_path(book_pathSEXP);
+    rcpp_result_gen = Rcpp::wrap(gc_approval_open(book_path));
+    return rcpp_result_gen;
+END_RCPP
+}
+// gc_approval_close
+void gc_approval_close(SEXP approval_ptr);
+RcppExport SEXP _gnucashr_gc_approval_close(SEXP approval_ptrSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type approval_ptr(approval_ptrSEXP);
+    gc_approval_close(approval_ptr);
+    return R_NilValue;
+END_RCPP
+}
+// gc_approval_create
+std::string gc_approval_create(SEXP approval_ptr, std::string agent_name, std::string tool_name, std::string arguments_json, std::string requesting_user, std::string reason);
+RcppExport SEXP _gnucashr_gc_approval_create(SEXP approval_ptrSEXP, SEXP agent_nameSEXP, SEXP tool_nameSEXP, SEXP arguments_jsonSEXP, SEXP requesting_userSEXP, SEXP reasonSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type approval_ptr(approval_ptrSEXP);
+    Rcpp::traits::input_parameter< std::string >::type agent_name(agent_nameSEXP);
+    Rcpp::traits::input_parameter< std::string >::type tool_name(tool_nameSEXP);
+    Rcpp::traits::input_parameter< std::string >::type arguments_json(arguments_jsonSEXP);
+    Rcpp::traits::input_parameter< std::string >::type requesting_user(requesting_userSEXP);
+    Rcpp::traits::input_parameter< std::string >::type reason(reasonSEXP);
+    rcpp_result_gen = Rcpp::wrap(gc_approval_create(approval_ptr, agent_name, tool_name, arguments_json, requesting_user, reason));
+    return rcpp_result_gen;
+END_RCPP
+}
+// gc_approval_pending
+Rcpp::DataFrame gc_approval_pending(SEXP approval_ptr, int limit);
+RcppExport SEXP _gnucashr_gc_approval_pending(SEXP approval_ptrSEXP, SEXP limitSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type approval_ptr(approval_ptrSEXP);
+    Rcpp::traits::input_parameter< int >::type limit(limitSEXP);
+    rcpp_result_gen = Rcpp::wrap(gc_approval_pending(approval_ptr, limit));
+    return rcpp_result_gen;
+END_RCPP
+}
+// gc_approval_approve
+void gc_approval_approve(SEXP approval_ptr, std::string id, std::string approver);
+RcppExport SEXP _gnucashr_gc_approval_approve(SEXP approval_ptrSEXP, SEXP idSEXP, SEXP approverSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type approval_ptr(approval_ptrSEXP);
+    Rcpp::traits::input_parameter< std::string >::type id(idSEXP);
+    Rcpp::traits::input_parameter< std::string >::type approver(approverSEXP);
+    gc_approval_approve(approval_ptr, id, approver);
+    return R_NilValue;
+END_RCPP
+}
+// gc_approval_reject
+void gc_approval_reject(SEXP approval_ptr, std::string id, std::string approver, std::string reason);
+RcppExport SEXP _gnucashr_gc_approval_reject(SEXP approval_ptrSEXP, SEXP idSEXP, SEXP approverSEXP, SEXP reasonSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type approval_ptr(approval_ptrSEXP);
+    Rcpp::traits::input_parameter< std::string >::type id(idSEXP);
+    Rcpp::traits::input_parameter< std::string >::type approver(approverSEXP);
+    Rcpp::traits::input_parameter< std::string >::type reason(reasonSEXP);
+    gc_approval_reject(approval_ptr, id, approver, reason);
+    return R_NilValue;
+END_RCPP
+}
+// gc_approval_get
+SEXP gc_approval_get(SEXP approval_ptr, std::string id);
+RcppExport SEXP _gnucashr_gc_approval_get(SEXP approval_ptrSEXP, SEXP idSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type approval_ptr(approval_ptrSEXP);
+    Rcpp::traits::input_parameter< std::string >::type id(idSEXP);
+    rcpp_result_gen = Rcpp::wrap(gc_approval_get(approval_ptr, id));
+    return rcpp_result_gen;
+END_RCPP
+}
 // generate_guid
 String generate_guid();
 RcppExport SEXP _gnucashr_generate_guid() {
@@ -881,6 +1027,18 @@ static const R_CallMethodDef CallEntries[] = {
     {"_gnucashr_gc_agent_state_enqueue_review", (DL_FUNC) &_gnucashr_gc_agent_state_enqueue_review, 5},
     {"_gnucashr_gc_agent_state_pending_reviews", (DL_FUNC) &_gnucashr_gc_agent_state_pending_reviews, 2},
     {"_gnucashr_gc_agent_state_update_review", (DL_FUNC) &_gnucashr_gc_agent_state_update_review, 3},
+    {"_gnucashr_gc_classify_tool", (DL_FUNC) &_gnucashr_gc_classify_tool, 1},
+    {"_gnucashr_gc_security_check", (DL_FUNC) &_gnucashr_gc_security_check, 3},
+    {"_gnucashr_gc_rate_limiter_create", (DL_FUNC) &_gnucashr_gc_rate_limiter_create, 0},
+    {"_gnucashr_gc_rate_limiter_check", (DL_FUNC) &_gnucashr_gc_rate_limiter_check, 4},
+    {"_gnucashr_gc_check_anomaly", (DL_FUNC) &_gnucashr_gc_check_anomaly, 2},
+    {"_gnucashr_gc_approval_open", (DL_FUNC) &_gnucashr_gc_approval_open, 1},
+    {"_gnucashr_gc_approval_close", (DL_FUNC) &_gnucashr_gc_approval_close, 1},
+    {"_gnucashr_gc_approval_create", (DL_FUNC) &_gnucashr_gc_approval_create, 6},
+    {"_gnucashr_gc_approval_pending", (DL_FUNC) &_gnucashr_gc_approval_pending, 2},
+    {"_gnucashr_gc_approval_approve", (DL_FUNC) &_gnucashr_gc_approval_approve, 3},
+    {"_gnucashr_gc_approval_reject", (DL_FUNC) &_gnucashr_gc_approval_reject, 4},
+    {"_gnucashr_gc_approval_get", (DL_FUNC) &_gnucashr_gc_approval_get, 2},
     {"_gnucashr_generate_guid", (DL_FUNC) &_gnucashr_generate_guid, 0},
     {"_gnucashr_validate_guid", (DL_FUNC) &_gnucashr_validate_guid, 1},
     {"_gnucashr_generate_guids", (DL_FUNC) &_gnucashr_generate_guids, 1},

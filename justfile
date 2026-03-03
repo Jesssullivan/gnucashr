@@ -191,6 +191,22 @@ agent-review book agent="transaction-categorizer":
     @sqlite3 "{{book}}.agent.{{agent}}.db" "SELECT id, transaction_guid, suggested_category, confidence, status FROM review_queue WHERE status='pending' LIMIT 20" 2>/dev/null || echo "  (no pending reviews)"
 
 # ============================================================
+# Daemon / Scheduler (Week 15)
+# ============================================================
+
+# Start daemon with a config file
+daemon-start config:
+    cd lib/gnucash-core/build && ./gnucash-bridge --daemon {{config}}
+
+# Validate a daemon config file (parse only)
+daemon-config-validate config:
+    @cd lib/gnucash-core/build && echo '{}' | timeout 1 ./gnucash-bridge --daemon {{config}} 2>&1; true
+
+# Run scheduler tests (Catch2)
+scheduler-test: cpp-build
+    cd lib/gnucash-core/build && ctest --output-on-failure -R "scheduler"
+
+# ============================================================
 # Security (Week 7)
 # ============================================================
 

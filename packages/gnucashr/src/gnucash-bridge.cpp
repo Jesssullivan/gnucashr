@@ -16,6 +16,8 @@
 #include <gnucash/identity.h>
 #include <gnucash/audit.h>
 #include <gnucash/agent_state.h>
+#include <gnucash/security.h>
+#include <gnucash/approval.h>
 
 using namespace Rcpp;
 
@@ -1277,4 +1279,299 @@ void gc_agent_state_update_review(SEXP state_ptr, int id, std::string status) {
     auto result = db.update_review(id, s);
     if (result.is_err())
         Rcpp::stop(result.unwrap_err());
+}
+
+// ========================================================================
+// Security (Week 17)
+// ========================================================================
+
+//' Classify MCP Tool Authorization Level (C++ Backend)
+//'
+//' @param tool_name MCP tool name (e.g., "gnucash_post_transaction")
+//' @return String: "auto", "review", or "approve"
+//' @export
+// [[Rcpp::export]]
+std::string gc_classify_tool(std::string tool_name) {
+    auto level = gnucash::classify_tool(tool_name);
+    return gnucash::audit::authorization_level_to_string(level);
+}
+
+//' Run Security Check (C++ Backend)
+//'
+//' @param policy_list R list with enforcement_enabled, agent_name, agent_tier, rules
+//' @param tool_name MCP tool name
+//' @param arguments_json JSON string of tool arguments
+//' @return Named list: decision, reason, approval_id (or NULL)
+//' @export
+// [[Rcpp::export]]
+Rcpp::List gc_security_check(Rcpp::List policy_list,
+                              std::string tool_name,
+                              std::string arguments_json) {
+    gnucash::SecurityPolicy policy;
+    policy.enforcement_enabled = Rcpp::as<bool>(policy_list["enforcement_enabled"]);
+    policy.agent_name = Rcpp::as<std::string>(policy_list["agent_name"]);
+
+    std::string tier_str = Rcpp::as<std::string>(policy_list["agent_tier"]);
+    policy.agent_tier = gnucash::audit::parse_authorization_level(tier_str);
+
+    gnucash::json args;
+    try {
+        args = gnucash::json::parse(arguments_json);
+    } catch (...) {
+        args = gnucash::json::object();
+    }
+
+    // Create a fresh rate limiter per check (stateless from R side)
+    gnucash::RateLimiter limiter;
+    auto result = gnucash::security_check(policy, tool_name, args, limiter);
+
+    return Rcpp::List::create(
+        Named("decision") = gnucash::security_decision_to_string(result.decision),
+        Named("reason") = result.reason,
+        Named("approval_id") = result.approval_id.has_value()
+            ? Rcpp::wrap(result.approval_id.value())
+            : R_NilValue
+    );
+}
+
+//' Create Rate Limiter (C++ Backend)
+//'
+//' @return External pointer to a RateLimiter
+//' @export
+// [[Rcpp::export]]
+SEXP gc_rate_limiter_create() {
+    auto* limiter = new gnucash::RateLimiter();
+    Rcpp::XPtr<gnucash::RateLimiter> ptr(limiter, true);
+    return ptr;
+}
+
+//' Check Rate Limit (C++ Backend)
+//'
+//' @param limiter_ptr External pointer from gc_rate_limiter_create()
+//' @param agent Agent identifier
+//' @param operation Operation name
+//' @param max_per_hour Maximum calls allowed per hour
+//' @return Named list: allowed (logical), remaining (integer)
+//' @export
+// [[Rcpp::export]]
+Rcpp::List gc_rate_limiter_check(SEXP limiter_ptr, std::string agent,
+                                  std::string operation, int max_per_hour) {
+    Rcpp::XPtr<gnucash::RateLimiter> limiter(limiter_ptr);
+    if (!limiter) Rcpp::stop("Invalid rate limiter pointer");
+
+    bool allowed = limiter->check_and_record(agent, operation, max_per_hour);
+    int remaining = limiter->remaining(agent, operation, max_per_hour);
+
+    return Rcpp::List::create(
+        Named("allowed") = allowed,
+        Named("remaining") = remaining
+    );
+}
+
+//' Check Transaction Anomaly (C++ Backend)
+//'
+//' @param arguments_json JSON string of tool arguments
+//' @param amount_threshold Anomaly threshold in cents (default 500000 = $5000)
+//' @return Named list: is_anomalous, reason, severity
+//' @export
+// [[Rcpp::export]]
+Rcpp::List gc_check_anomaly(std::string arguments_json,
+                             double amount_threshold = 500000) {
+    gnucash::json args;
+    try {
+        args = gnucash::json::parse(arguments_json);
+    } catch (...) {
+        args = gnucash::json::object();
+    }
+
+    auto result = gnucash::check_transaction_anomaly(args,
+                      static_cast<int64_t>(amount_threshold));
+
+    return Rcpp::List::create(
+        Named("is_anomalous") = result.is_anomalous,
+        Named("reason") = result.reason,
+        Named("severity") = result.severity
+    );
+}
+
+// ========================================================================
+// Approval Queue (Week 17)
+// ========================================================================
+
+// R external pointer type for ApprovalDB
+typedef Rcpp::XPtr<gnucash::ApprovalDB> ApprovalPtr;
+
+static gnucash::ApprovalDB& check_approval(SEXP ptr) {
+    ApprovalPtr adb(ptr);
+    if (!adb)
+        Rcpp::stop("Approval DB handle is invalid or closed");
+    return *adb;
+}
+
+//' Open Approval Database (C++ Backend)
+//'
+//' @param book_path Path to GnuCash file (approval DB at <book>.approvals.db)
+//' @return External pointer to ApprovalDB
+//' @export
+// [[Rcpp::export]]
+SEXP gc_approval_open(std::string book_path) {
+    auto result = gnucash::ApprovalDB::open(book_path);
+    if (result.is_err())
+        Rcpp::stop(result.unwrap_err());
+
+    auto* adb = new gnucash::ApprovalDB(std::move(result.unwrap()));
+    ApprovalPtr ptr(adb, true);
+    return ptr;
+}
+
+//' Close Approval Database (C++ Backend)
+//'
+//' @param approval_ptr External pointer from gc_approval_open()
+//' @export
+// [[Rcpp::export]]
+void gc_approval_close(SEXP approval_ptr) {
+    ApprovalPtr ptr(approval_ptr);
+    ptr.release();
+}
+
+//' Create Approval Request (C++ Backend)
+//'
+//' @param approval_ptr External pointer from gc_approval_open()
+//' @param agent_name Agent creating the request
+//' @param tool_name Tool requiring approval
+//' @param arguments_json JSON string of tool arguments
+//' @param requesting_user User identity
+//' @param reason Why approval is needed
+//' @return Request ID (GUID string)
+//' @export
+// [[Rcpp::export]]
+std::string gc_approval_create(SEXP approval_ptr,
+                                std::string agent_name,
+                                std::string tool_name,
+                                std::string arguments_json,
+                                std::string requesting_user,
+                                std::string reason) {
+    auto& adb = check_approval(approval_ptr);
+
+    gnucash::json args;
+    try {
+        args = gnucash::json::parse(arguments_json);
+    } catch (...) {
+        args = gnucash::json::object();
+    }
+
+    auto result = adb.create_request(agent_name, tool_name, args,
+                                      requesting_user, reason);
+    if (result.is_err())
+        Rcpp::stop(result.unwrap_err());
+
+    return result.unwrap();
+}
+
+//' List Pending Approval Requests (C++ Backend)
+//'
+//' @param approval_ptr External pointer from gc_approval_open()
+//' @param limit Maximum number of requests to return
+//' @return Data frame of pending requests
+//' @export
+// [[Rcpp::export]]
+Rcpp::DataFrame gc_approval_pending(SEXP approval_ptr, int limit = 50) {
+    auto& adb = check_approval(approval_ptr);
+    auto result = adb.pending_requests(limit);
+    if (result.is_err())
+        Rcpp::stop(result.unwrap_err());
+
+    auto requests = result.unwrap();
+    int n = static_cast<int>(requests.size());
+
+    Rcpp::CharacterVector id(n), agent(n), tool(n), user(n);
+    Rcpp::CharacterVector reason_vec(n), created(n), status(n);
+
+    for (int i = 0; i < n; ++i) {
+        id[i] = requests[i].id;
+        agent[i] = requests[i].agent_name;
+        tool[i] = requests[i].tool_name;
+        user[i] = requests[i].requesting_user;
+        reason_vec[i] = requests[i].reason;
+        created[i] = requests[i].created_at;
+        status[i] = requests[i].status;
+    }
+
+    return Rcpp::DataFrame::create(
+        Named("id") = id,
+        Named("agent_name") = agent,
+        Named("tool_name") = tool,
+        Named("requesting_user") = user,
+        Named("reason") = reason_vec,
+        Named("created_at") = created,
+        Named("status") = status,
+        Named("stringsAsFactors") = false
+    );
+}
+
+//' Approve a Pending Request (C++ Backend)
+//'
+//' @param approval_ptr External pointer from gc_approval_open()
+//' @param id Request ID to approve
+//' @param approver Identity of the approver
+//' @export
+// [[Rcpp::export]]
+void gc_approval_approve(SEXP approval_ptr, std::string id, std::string approver) {
+    auto& adb = check_approval(approval_ptr);
+    auto result = adb.approve(id, approver);
+    if (result.is_err())
+        Rcpp::stop(result.unwrap_err());
+}
+
+//' Reject a Pending Request (C++ Backend)
+//'
+//' @param approval_ptr External pointer from gc_approval_open()
+//' @param id Request ID to reject
+//' @param approver Identity of the approver
+//' @param reason Reason for rejection
+//' @export
+// [[Rcpp::export]]
+void gc_approval_reject(SEXP approval_ptr, std::string id,
+                         std::string approver, std::string reason) {
+    auto& adb = check_approval(approval_ptr);
+    auto result = adb.reject(id, approver, reason);
+    if (result.is_err())
+        Rcpp::stop(result.unwrap_err());
+}
+
+//' Get a Specific Approval Request (C++ Backend)
+//'
+//' @param approval_ptr External pointer from gc_approval_open()
+//' @param id Request ID
+//' @return Named list or NULL if not found
+//' @export
+// [[Rcpp::export]]
+SEXP gc_approval_get(SEXP approval_ptr, std::string id) {
+    auto& adb = check_approval(approval_ptr);
+    auto result = adb.get_request(id);
+    if (result.is_err())
+        Rcpp::stop(result.unwrap_err());
+
+    auto opt = result.unwrap();
+    if (!opt.has_value()) {
+        return R_NilValue;
+    }
+
+    auto& req = *opt;
+    return Rcpp::List::create(
+        Named("id") = req.id,
+        Named("agent_name") = req.agent_name,
+        Named("tool_name") = req.tool_name,
+        Named("arguments") = req.arguments.dump(),
+        Named("requesting_user") = req.requesting_user,
+        Named("reason") = req.reason,
+        Named("created_at") = req.created_at,
+        Named("status") = req.status,
+        Named("approver") = req.approver.has_value()
+            ? Rcpp::wrap(req.approver.value()) : R_NilValue,
+        Named("resolved_at") = req.resolved_at.has_value()
+            ? Rcpp::wrap(req.resolved_at.value()) : R_NilValue,
+        Named("rejection_reason") = req.rejection_reason.has_value()
+            ? Rcpp::wrap(req.rejection_reason.value()) : R_NilValue
+    );
 }

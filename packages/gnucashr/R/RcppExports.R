@@ -562,6 +562,128 @@ gc_agent_state_update_review <- function(state_ptr, id, status) {
     invisible(.Call(`_gnucashr_gc_agent_state_update_review`, state_ptr, id, status))
 }
 
+#' Classify MCP Tool Authorization Level (C++ Backend)
+#'
+#' @param tool_name MCP tool name (e.g., "gnucash_post_transaction")
+#' @return String: "auto", "review", or "approve"
+#' @export
+gc_classify_tool <- function(tool_name) {
+    .Call(`_gnucashr_gc_classify_tool`, tool_name)
+}
+
+#' Run Security Check (C++ Backend)
+#'
+#' @param policy_list R list with enforcement_enabled, agent_name, agent_tier, rules
+#' @param tool_name MCP tool name
+#' @param arguments_json JSON string of tool arguments
+#' @return Named list: decision, reason, approval_id (or NULL)
+#' @export
+gc_security_check <- function(policy_list, tool_name, arguments_json) {
+    .Call(`_gnucashr_gc_security_check`, policy_list, tool_name, arguments_json)
+}
+
+#' Create Rate Limiter (C++ Backend)
+#'
+#' @return External pointer to a RateLimiter
+#' @export
+gc_rate_limiter_create <- function() {
+    .Call(`_gnucashr_gc_rate_limiter_create`)
+}
+
+#' Check Rate Limit (C++ Backend)
+#'
+#' @param limiter_ptr External pointer from gc_rate_limiter_create()
+#' @param agent Agent identifier
+#' @param operation Operation name
+#' @param max_per_hour Maximum calls allowed per hour
+#' @return Named list: allowed (logical), remaining (integer)
+#' @export
+gc_rate_limiter_check <- function(limiter_ptr, agent, operation, max_per_hour) {
+    .Call(`_gnucashr_gc_rate_limiter_check`, limiter_ptr, agent, operation, max_per_hour)
+}
+
+#' Check Transaction Anomaly (C++ Backend)
+#'
+#' @param arguments_json JSON string of tool arguments
+#' @param amount_threshold Anomaly threshold in cents (default 500000 = $5000)
+#' @return Named list: is_anomalous, reason, severity
+#' @export
+gc_check_anomaly <- function(arguments_json, amount_threshold = 500000) {
+    .Call(`_gnucashr_gc_check_anomaly`, arguments_json, amount_threshold)
+}
+
+#' Open Approval Database (C++ Backend)
+#'
+#' @param book_path Path to GnuCash file (approval DB at <book>.approvals.db)
+#' @return External pointer to ApprovalDB
+#' @export
+gc_approval_open <- function(book_path) {
+    .Call(`_gnucashr_gc_approval_open`, book_path)
+}
+
+#' Close Approval Database (C++ Backend)
+#'
+#' @param approval_ptr External pointer from gc_approval_open()
+#' @export
+gc_approval_close <- function(approval_ptr) {
+    invisible(.Call(`_gnucashr_gc_approval_close`, approval_ptr))
+}
+
+#' Create Approval Request (C++ Backend)
+#'
+#' @param approval_ptr External pointer from gc_approval_open()
+#' @param agent_name Agent creating the request
+#' @param tool_name Tool requiring approval
+#' @param arguments_json JSON string of tool arguments
+#' @param requesting_user User identity
+#' @param reason Why approval is needed
+#' @return Request ID (GUID string)
+#' @export
+gc_approval_create <- function(approval_ptr, agent_name, tool_name, arguments_json, requesting_user, reason) {
+    .Call(`_gnucashr_gc_approval_create`, approval_ptr, agent_name, tool_name, arguments_json, requesting_user, reason)
+}
+
+#' List Pending Approval Requests (C++ Backend)
+#'
+#' @param approval_ptr External pointer from gc_approval_open()
+#' @param limit Maximum number of requests to return
+#' @return Data frame of pending requests
+#' @export
+gc_approval_pending <- function(approval_ptr, limit = 50L) {
+    .Call(`_gnucashr_gc_approval_pending`, approval_ptr, limit)
+}
+
+#' Approve a Pending Request (C++ Backend)
+#'
+#' @param approval_ptr External pointer from gc_approval_open()
+#' @param id Request ID to approve
+#' @param approver Identity of the approver
+#' @export
+gc_approval_approve <- function(approval_ptr, id, approver) {
+    invisible(.Call(`_gnucashr_gc_approval_approve`, approval_ptr, id, approver))
+}
+
+#' Reject a Pending Request (C++ Backend)
+#'
+#' @param approval_ptr External pointer from gc_approval_open()
+#' @param id Request ID to reject
+#' @param approver Identity of the approver
+#' @param reason Reason for rejection
+#' @export
+gc_approval_reject <- function(approval_ptr, id, approver, reason) {
+    invisible(.Call(`_gnucashr_gc_approval_reject`, approval_ptr, id, approver, reason))
+}
+
+#' Get a Specific Approval Request (C++ Backend)
+#'
+#' @param approval_ptr External pointer from gc_approval_open()
+#' @param id Request ID
+#' @return Named list or NULL if not found
+#' @export
+gc_approval_get <- function(approval_ptr, id) {
+    .Call(`_gnucashr_gc_approval_get`, approval_ptr, id)
+}
+
 #' Generate GnuCash-Format GUID
 #'
 #' Generate a random 32-character hex GUID in GnuCash format.

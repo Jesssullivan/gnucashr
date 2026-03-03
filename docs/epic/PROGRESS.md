@@ -242,6 +242,49 @@
 
 ---
 
+## Phase 7: Scheduler, LLM Categorization, Security Vendoring (Weeks 15-17) -- COMPLETE
+
+### Week 15: Schedule Executor (C++) -- COMPLETE
+- [x] 15.1 scheduler.h/scheduler.cpp: ScheduleInterval, parse_schedule(), is_due(), DaemonConfig
+- [x] 15.2 --run mode in main.cpp: one-shot agent execution, prints JSON report to stdout
+- [x] 15.3 --daemon mode in main.cpp: persistent poll loop with SIGTERM handler
+- [x] 15.4 Build system: CMakeLists.txt updated, test_scheduler.cpp (25 tests), daemon-config.json fixture
+- [x] 15.5 Justfile: daemon-start, daemon-config-validate, scheduler-test recipes
+- [x] 15.V Verification: 287 C++ tests pass (262 + 25 new)
+
+### Week 16: LLM-Powered Categorization (R) -- COMPLETE
+- [x] 16.1 llm-categorize.R: categorize_with_llm(), llm_suggest_category()
+- [x] 16.2 llm-api.R: .build_categorization_prompt(), .call_anthropic(), .call_openai(), .parse_llm_categorizations(), .resolve_api_key()
+- [x] 16.3 categorize-pipeline.R: run_categorization_pipeline() (C++ pattern match + LLM fallback)
+- [x] 16.4 test-llm-categorize.R: 15 tests (prompt building, JSON parsing, key resolution, integration)
+- [x] 16.5 DESCRIPTION: httr2 added to Suggests
+- [x] 16.V Verification: 738 R tests pass
+
+### Week 17: Security/Approval Vendoring (R Package) -- COMPLETE
+- [x] 17.1 Vendor headers: security.h, approval.h -> src/gnucash/
+- [x] 17.2 Vendor sources: gc_security.cpp, gc_approval.cpp
+- [x] 17.3 Rcpp wrappers (security): gc_classify_tool, gc_security_check, gc_rate_limiter_create, gc_rate_limiter_check, gc_check_anomaly
+- [x] 17.4 Rcpp wrappers (approval): gc_approval_open, gc_approval_close, gc_approval_create, gc_approval_pending, gc_approval_approve, gc_approval_reject, gc_approval_get
+- [x] 17.5 R wrappers: security.R (5 exports), approval.R (7 exports)
+- [x] 17.6 Tests: test-security.R (12 tests), test-approval.R (10 tests)
+- [x] 17.7 Verification: 781 R tests pass, 287 C++ tests pass
+
+### Gate G7: [x] PASSED (local)
+| Metric | Target | Actual | Status |
+|--------|--------|--------|--------|
+| C++ tests | ~280 | 287 | All passing |
+| R tests | ~737 | 781 | All passing |
+| Rcpp exports | 56 | 56 | 44 + 12 new |
+| Vendored headers | 16 | 16 | +security.h, +approval.h |
+| Vendored sources | 14 | 14 | +gc_security.cpp, +gc_approval.cpp |
+| R source files | 39 | 39 | +llm-categorize.R, +llm-api.R, +categorize-pipeline.R, +security.R, +approval.R |
+| R test files | 34 | 33 | +test-llm-categorize.R, +test-security.R, +test-approval.R |
+| C++ source files (lib) | 15 | 20 | +scheduler.cpp (in bridge/test, not lib) |
+| C++ test files (lib) | 16 | 16 | +test_scheduler.cpp |
+| Justfile recipes | ~47 | 52 | +daemon-start, +daemon-config-validate, +scheduler-test |
+
+---
+
 ## Decision Log
 
 | Date | Decision | Rationale |
@@ -281,6 +324,11 @@
 | 2026-03-02 | Phase 6 complete | R package sync: 7 new + 2 updated vendored modules, nlohmann/json, ~35 Rcpp functions, 700 R tests |
 | 2026-03-02 | nlohmann/json vendored | Single-header v3.11.3, MIT license, CRAN precedent (RcppSimdJson, jsonify) |
 | 2026-03-02 | Excluded from R pkg | agent.h (dhall dep), mcp.h (server-only), security.h/approval.h (deferred) |
+| 2026-03-02 | Phase 7 started | Three deferred items: schedule executor, LLM categorization, security vendoring |
+| 2026-03-02 | Scheduler in bridge/test only | scheduler.cpp compiled with bridge and tests, not core library (depends on dhall_config) |
+| 2026-03-02 | LLM categorization design | httr2 in Suggests, graceful degradation without API keys, Anthropic + OpenAI support |
+| 2026-03-02 | Security/approval vendored | Exact Phase 6 pattern: copy headers + adapt sources, no Windows #ifdef needed |
+| 2026-03-02 | Phase 7 complete | 287 C++ tests, 781 R tests, 56 Rcpp exports, all three deferred items implemented |
 
 ---
 
