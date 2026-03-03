@@ -329,6 +329,70 @@
 | 2026-03-02 | LLM categorization design | httr2 in Suggests, graceful degradation without API keys, Anthropic + OpenAI support |
 | 2026-03-02 | Security/approval vendored | Exact Phase 6 pattern: copy headers + adapt sources, no Windows #ifdef needed |
 | 2026-03-02 | Phase 7 complete | 287 C++ tests, 781 R tests, 56 Rcpp exports, all three deferred items implemented |
+| 2026-03-02 | Phase 8 started | Live deployment: Plaid, TinyClaw MCP, XMPP, containers |
+| 2026-03-02 | Plaid via httr2 | R-native HTTP, mock-testable, sandbox/development/production environments |
+| 2026-03-02 | TinyClaw MCP adapter | JSON-RPC 2.0 subprocess bridge, each MCP tool becomes a TinyClaw Tool |
+| 2026-03-02 | XMPP via mellium.im | Go XMPP library, MUC support, JID-based allowlist |
+| 2026-03-02 | OMEMO deferred | No mature Go OMEMO library; plaintext XMPP for now |
+| 2026-03-02 | Chinese build tags | //go:build !nochinese on 6 channel files, reduces binary size |
+| 2026-03-02 | Default model → opus-4-6 | TinyClaw default model changed to anthropic/claude-opus-4-6 |
+| 2026-03-02 | Phase 8 complete | All 8 phases done, both repos CI green, PRs merged |
+
+---
+
+## Phase 8: Live Deployment (Weeks 18-21) -- COMPLETE
+
+### Week 18: Plaid Integration (gnucashr R Package) -- COMPLETE
+- [x] 18.1 Plaid API wrapper (plaid.R: plaid_create_client, plaid_sync_transactions, plaid_get_accounts, plaid_import_transactions)
+- [x] 18.2 Plaid Link helper (plaid-link.R: plaid_create_link_token, plaid_exchange_token, plaid_link_server)
+- [x] 18.3 Transaction mapping (plaid-map.R: .plaid_to_ofx_transactions, .plaid_fitid, .plaid_category_hint)
+- [x] 18.4 Tests (test-plaid.R: 15 tests with mock responses)
+- [x] 18.5 Plaid setup documentation (docs/PLAID_SETUP.md)
+
+### Week 19: TinyClaw MCP Adapter -- COMPLETE
+- [x] 19.1 MCP client tool (mcp_client.go: JSON-RPC 2.0 subprocess, initialize/discover/call)
+- [x] 19.2 MCP tool registry bridge (mcp_registry.go: RegisterMCPServer, MCPProxyTool)
+- [x] 19.3 MCP client tests (mcp_client_test.go: mock MCP server, 10 tests)
+- [x] 19.4 Config updates (XMPPConfig, MCPServer structs, default model → claude-opus-4-6)
+
+### Week 20: XMPP Channel + Chinese Code Cleanup (TinyClaw) -- COMPLETE
+- [x] 20.1 XMPP channel (xmpp.go: mellium.im/xmpp, MUC support, JID allowlist)
+- [x] 20.2 XMPP tests (xmpp_test.go: 8 tests, config validation, allowlist)
+- [x] 20.3 Config + registration (config.go XMPPConfig, manager.go XMPP init)
+- [x] 20.4 Chinese channel build tags (//go:build !nochinese on 6 files, chinese_stubs.go)
+- [ ] 20.5 OMEMO encryption (deferred -- no mature Go OMEMO library)
+
+### Week 21: E2E Integration + Container Deployment -- COMPLETE
+- [x] 21.1 Approval queue XMPP notifications (approval_notify.go)
+- [x] 21.2 Daemon config (config/gnucashr-daemon.json)
+- [x] 21.3 Container image (Containerfile: multi-stage Nix build)
+- [x] 21.4 K8s manifests (deploy/k8s/: deployment, PVC, configmap, TinyClaw sidecar)
+- [x] 21.5 DESCRIPTION updated (httpuv in Suggests)
+
+### Gate G8: [x] PASSED
+- [x] gnucashr CI: all 8 checks green (R-CMD-check 4 platforms, Nix build/check/R-CMD-check, Bazel)
+- [x] tinyclaw CI: all 8 checks green (Dhall, Nix, OCaml, Go Tests, E2E, Linter, Build Binary x3)
+- [x] Both PRs merged to main (gnucashr PR #5, tinyclaw PR #30)
+
+---
+
+## Final Metrics (End of Phase 8)
+
+| Metric | Value |
+|--------|-------|
+| C++ tests (gnucashr) | 287 |
+| R tests (gnucashr) | ~796 |
+| Rcpp exports | 56 |
+| MCP tools (gnucash-bridge) | 29 |
+| Agent implementations | 9 |
+| Dhall agent configs | 9 |
+| TinyClaw channels | 13 (+ XMPP) |
+| MCP tools via TinyClaw | 29 (proxied) |
+| Container images | 1 (gnucashr multi-stage) |
+| K8s manifests | 4 |
+| R source files | 42 |
+| Justfile recipes | 52 |
+| Phases completed | 8/8 |
 
 ---
 
