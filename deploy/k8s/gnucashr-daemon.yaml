@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gnucashr-daemon
+  labels:
+    app: gnucashr
+    component: daemon
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: gnucashr
+      component: daemon
+  template:
+    metadata:
+      labels:
+        app: gnucashr
+        component: daemon
+    spec:
+      containers:
+        - name: gnucashr
+          image: gnucashr-daemon:latest
+          args:
+            - "--daemon"
+            - "/config/daemon.json"
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: config
+              mountPath: /config
+              readOnly: true
+            - name: logs
+              mountPath: /var/log
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: gnucashr-data
+        - name: config
+          configMap:
+            name: gnucashr-config
+        - name: logs
+          emptyDir: {}
+      restartPolicy: Always

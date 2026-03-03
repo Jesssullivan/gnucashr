@@ -50,6 +50,7 @@ Suggests:
     rmarkdown,
     gt,
     shiny,
+    httpuv,
     renv
 VignetteBuilder: knitr
 Config/testthat/edition: 3
